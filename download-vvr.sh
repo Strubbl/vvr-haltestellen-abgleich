@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -eux
-cache_dir="cache"
+cache_dir="cache/vvr/version-20211207_234400"
 search_words="Altefähr Parow Prohn Stralsund"
 
 if [ ! -d "$cache_dir" ]
 then
-  mkdir "$cache_dir"
+  mkdir -p "$cache_dir"
 fi
 
 for i in $search_words
