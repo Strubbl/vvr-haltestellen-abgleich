@@ -114,11 +114,12 @@ type MatchResult struct {
 }
 
 type Statistics struct {
-	VvrStops            int
-	OsmStops            int
-	RemainingVvrStops   int
-	RemainingOsmStops   int
-	OsmStopsMatchingVvr int
+	VvrStops              int
+	OsmStops              int
+	RemainingVvrStops     int
+	RemainingOsmStops     int
+	OsmStopsMatchingVvr   int
+	VvrStopsWithOsmObject int
 }
 
 type TemplateData struct {
@@ -261,9 +262,21 @@ func getCityResultFromData(cityName string, vvr VvrData) *VvrCity {
 	return nil
 }
 
-func doesOsmElementMatchVvrElement(osm OsmElement, name string, city string) bool {
-	// TODO use city to find more false negatives
-	return osm.Tags.Name == name
+func doesOsmElementMatchVvrElement(osm OsmElement, vvrName string, city string) bool {
+	osmName := osm.Tags.Name
+	// exact match
+	if osmName == vvrName {
+		return true
+	}
+	// prefix OSM name with city
+	if city+" "+osmName == vvrName {
+		return true
+	}
+	// prefix OSM name with city and comma
+	if city+", "+osmName == vvrName {
+		return true
+	}
+	return false
 }
 
 func writeTemplateToHTML(templateData TemplateData) {
@@ -490,6 +503,7 @@ func main() {
 		}
 	}
 
+	remainingVvrStops := 0
 	result := make([]MatchResult, len(mbs))
 	for i := 0; i < len(mbs); i++ {
 		result[i].ID = i + 1
@@ -519,6 +533,9 @@ func main() {
 				result[i].NrPlatforms++
 			}
 		}
+		if len(mbs[i].Elements) == 0 {
+			remainingVvrStops++
+		}
 	}
 
 	var templateData TemplateData
@@ -527,8 +544,9 @@ func main() {
 	templateData.Title = "VVR-OSM Haltestellenabgleich"
 	templateData.Stats.VvrStops = vvrBusStopSum
 	templateData.Stats.OsmStops = totalOsmElements
-	templateData.Stats.RemainingVvrStops = -1
+	templateData.Stats.RemainingVvrStops = remainingVvrStops
 	templateData.Stats.RemainingOsmStops = remainingOsmElements
 	templateData.Stats.OsmStopsMatchingVvr = totalOsmElements - remainingOsmElements
+	templateData.Stats.VvrStopsWithOsmObject = vvrBusStopSum - remainingVvrStops
 	writeTemplateToHTML(templateData)
 }

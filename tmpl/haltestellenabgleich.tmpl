@@ -22,10 +22,12 @@ bottom: .5em;
 </head>
 <body>
 <h1>{{ .Title }}</h1>
-<p>VVR Bushaltestellen: {{ .Stats.VvrStops }}</p>
-<p>OSM Bushaltestellen und Busstops: {{ .Stats.OsmStops }}</p>
-<p>OSM Bushaltestellen und Busstops nicht in VVR Liste: {{ .Stats.RemainingOsmStops }}</p>
-<p>OSM Objekte mit VVR-Haltestellen zusammenpassend: {{ .Stats.OsmStopsMatchingVvr }}</p>
+<p>VVR Bushaltestellen: {{ .Stats.VvrStops }}<br />
+VVR Bushaltestellen ohne OSM Objekt: {{ .Stats.RemainingVvrStops }}<br />
+VVR-Haltestellen mit OSM Objekten verknüpft: {{ .Stats.VvrStopsWithOsmObject }}<br />
+OSM Objekte: {{ .Stats.OsmStops }}<br />
+OSM Objekte nicht mit VVR verknüpft: {{ .Stats.RemainingOsmStops }}<br />
+OSM Objekte mit VVR verknüpft: {{ .Stats.OsmStopsMatchingVvr }}</p>
 
   <table id="resultTable" class="table table-striped table-bordered table-hover table-sm sortable" style="width: auto;">
   <thead>
