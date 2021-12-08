@@ -27,9 +27,9 @@ const vvrDataFile = "vvr.json"
 const vvrSearchURL = "https://vvr.verbindungssuche.de/fpl/suhast.php?&query="
 
 // search area can be extended by append more areas with a pipe
-const overpassSearchArea = "Altefähr|Kramerhof|Stralsund"
+const overpassSearchArea = "Vorpommern-Rügen"
 const overpassURL = "http://overpass-api.de/api/interpreter?data="
-const overpassQueryPrefix = "[out:json][timeout:600];area[boundary=administrative][admin_level=8][name~'("
+const overpassQueryPrefix = "[out:json][timeout:600];area[boundary=administrative][admin_level=6][name~'("
 const overpassQuerySuffix = ")']->.searchArea;(nw[\"public_transport\"=\"platform\"][\"bus\"](area.searchArea);node[\"public_transport\"=\"stop_position\"][\"bus\"](area.searchArea);node[\"highway\"=\"bus_stop\"](area.searchArea););out;"
 
 // flags
