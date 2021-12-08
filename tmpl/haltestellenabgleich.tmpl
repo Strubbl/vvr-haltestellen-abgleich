@@ -33,6 +33,7 @@ OSM Objekte mit VVR verknüpft: {{ .Stats.OsmStopsMatchingVvr }}</p>
   <thead>
     <tr>
       <th scope="col" data-type="number">ID</th>
+      <th scope="col" data-type="number">VVR ID</th>
       <th scope="col" data-type="string">Name</th>
       <th scope="col" data-type="string">IsInVVR</th>
       <th scope="col" data-type="string">IsInOSM</th>
@@ -45,6 +46,7 @@ OSM Objekte mit VVR verknüpft: {{ .Stats.OsmStopsMatchingVvr }}</p>
      <tbody>
     {{range .Rows}}<tr>
       <td>{{ .ID }}</td>
+      <td>{{ .VvrID }}</td>
       <td>{{ .Name }}</td>
       <td>{{ .IsInVVR }}</td>
       <td>{{ .IsInOSM }}</td>
@@ -53,11 +55,12 @@ OSM Objekte mit VVR verknüpft: {{ .Stats.OsmStopsMatchingVvr }}</p>
       <td>{{ .NrStopPositions }}</td>
       <td>{{ .OsmReference }}</td>
     </tr>
-    {{else}}<tr><td colspan="7"><strong>no data</strong></td></tr>{{end}}
+    {{else}}<tr><td colspan="9"><strong>no data</strong></td></tr>{{end}}
     </tbody>
     <tfoot>
     <tr>
       <th scope="col">ID</th>
+      <th scope="col">VVR ID</th>
       <th scope="col">Name</th>
       <th scope="col">IsInVVR</th>
       <th scope="col">IsInOSM</th>

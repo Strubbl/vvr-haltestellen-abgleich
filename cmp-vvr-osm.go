@@ -104,6 +104,7 @@ type MatchedBusStop struct {
 
 type MatchResult struct {
 	ID              int
+	VvrID           string
 	Name            string
 	IsInVVR         bool
 	IsInOSM         bool
@@ -262,24 +263,24 @@ func getCityResultFromData(cityName string, vvr VvrData) *VvrCity {
 	return nil
 }
 
-func doesOsmElementMatchVvrElement(osm OsmElement, vvrName string, city string) bool {
-	osmName := osm.Tags.Name
+func doesOsmElementMatchVvrElement(osm OsmElement, vvrName string) bool {
+	osmNameCleaned1 := strings.ReplaceAll(osm.Tags.Name, "-", " ")
+	osmNameCleaned2 := strings.ReplaceAll(osmNameCleaned1, "/", " ")
+	osmNameCleaned3 := strings.ReplaceAll(osmNameCleaned2, ",", "")
+	vvrNameCleaned1 := strings.ReplaceAll(vvrName, "-", " ")
+	vvrNameCleaned2 := strings.ReplaceAll(vvrNameCleaned1, "/", " ")
+	vvrNameCleaned3 := strings.ReplaceAll(vvrNameCleaned2, ",", "")
+	osmNameCleaned := osmNameCleaned3
+	vvrNameCleaned := vvrNameCleaned3
 	// exact match
-	if osmName == vvrName {
+	if osmNameCleaned == vvrNameCleaned {
 		return true
 	}
-	// prefix OSM name with city
-	if city+" "+osmName == vvrName {
-		return true
-	}
-	// prefix OSM name with city and comma
-	if city+", "+osmName == vvrName {
-		return true
-	}
-	// remove comma from vvrName and try to match
-	vvrNameWithoutComma := strings.ReplaceAll(vvrName, ",", "")
-	if osmName == vvrNameWithoutComma {
-		return true
+	// prefix OSM name with a city
+	for i := 0; i < len(cities); i++ {
+		if cities[i]+" "+osmNameCleaned == vvrNameCleaned {
+			return true
+		}
 	}
 	return false
 }
@@ -474,7 +475,7 @@ func main() {
 				oneMatch.City = newVvr.CityResults[i].SearchWord
 				var removeOsmElementsByID []int
 				for m := 0; m < len(newOverpassData.Elements); m++ {
-					if doesOsmElementMatchVvrElement(newOverpassData.Elements[m], oneMatch.Name, oneMatch.City) {
+					if doesOsmElementMatchVvrElement(newOverpassData.Elements[m], oneMatch.Name) {
 						oneMatch.Elements = append(oneMatch.Elements, newOverpassData.Elements[m])
 						removeOsmElementsByID = append(removeOsmElementsByID, newOverpassData.Elements[m].ID)
 					}
@@ -518,6 +519,7 @@ func main() {
 	result := make([]MatchResult, len(mbs))
 	for i := 0; i < len(mbs); i++ {
 		result[i].ID = i + 1
+		result[i].VvrID = mbs[i].VvrID
 		result[i].IsInOSM = false
 		if len(mbs[i].Elements) > 0 {
 			result[i].IsInOSM = true
