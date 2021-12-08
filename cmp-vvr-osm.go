@@ -107,16 +107,18 @@ type MatchResult struct {
 	Name            string
 	IsInVVR         bool
 	IsInOSM         bool
+	NrBusStops      int
 	NrPlatforms     int
 	NrStopPositions int
 	OsmReference    string
 }
 
 type Statistics struct {
-	VvrStops          int
-	OsmStops          int
-	RemainingVvrStops int
-	RemainingOsmStops int
+	VvrStops            int
+	OsmStops            int
+	RemainingVvrStops   int
+	RemainingOsmStops   int
+	OsmStopsMatchingVvr int
 }
 
 type TemplateData struct {
@@ -506,7 +508,16 @@ func main() {
 		for k := 0; k < len(mbs[i].Elements); k++ {
 			object := mbs[i].Elements[k]
 			objectURL := "http://osm.org/" + object.Type + "/" + strconv.Itoa(object.ID)
-			result[i].OsmReference = result[i].OsmReference + "<a href=\"" + objectURL + "\">" + objectURL + "</a><br />"
+			result[i].OsmReference = result[i].OsmReference + "<a href=\"" + objectURL + "\">" + object.Type + " " + strconv.Itoa(object.ID) + "</a><br />"
+			if object.Tags.Highway == "bus_stop" {
+				result[i].NrBusStops++
+			}
+			if object.Tags.PublicTransport == "stop_position" {
+				result[i].NrStopPositions++
+			}
+			if object.Tags.PublicTransport == "platform" {
+				result[i].NrPlatforms++
+			}
 		}
 	}
 
@@ -518,5 +529,6 @@ func main() {
 	templateData.Stats.OsmStops = totalOsmElements
 	templateData.Stats.RemainingVvrStops = -1
 	templateData.Stats.RemainingOsmStops = remainingOsmElements
+	templateData.Stats.OsmStopsMatchingVvr = totalOsmElements - remainingOsmElements
 	writeTemplateToHTML(templateData)
 }
