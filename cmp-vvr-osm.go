@@ -37,7 +37,7 @@ var debug = flag.Bool("d", false, "get debug output (implies verbose mode)")
 var verbose = flag.Bool("verbose", false, "verbose mode")
 
 // non-const consts
-var cities = [...]string{"Altefähr", "Klein Kedingshagen", "Kramerhof", "Parow", "Prohn", "Stralsund"}
+var cities = [...]string{"Altefähr", "Damitz", "Garbodenhagen", "Grahlhof", "Jarkvitz", "Kedingshagen", "Kramerhof", "Parow", "Prohn", "Scharpitz", "Stralsund", "Zarrendorf"}
 var httpClient = &http.Client{Timeout: 1000 * time.Second}
 
 // type definitions
