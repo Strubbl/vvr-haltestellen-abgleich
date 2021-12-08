@@ -118,6 +118,7 @@ type MatchResult struct {
 type Statistics struct {
 	VvrStops              int
 	OsmStops              int
+	OsmStopsNoName        int
 	RemainingVvrStops     int
 	RemainingOsmStops     int
 	OsmStopsMatchingVvr   int
@@ -547,6 +548,7 @@ func main() {
 
 	vvrBusStopSum := 0
 	remainingVvrStops := 0
+	osmStopsNoName := 0
 	result := make([]MatchResult, len(mbs))
 	for i := 0; i < len(mbs); i++ {
 		result[i].ID = i + 1
@@ -577,6 +579,9 @@ func main() {
 			if object.Tags.PublicTransport == "platform" {
 				result[i].NrPlatforms++
 			}
+			if object.Tags.Name == "" {
+				osmStopsNoName++
+			}
 		}
 		if result[i].IsInVVR && len(mbs[i].Elements) == 0 {
 			remainingVvrStops++
@@ -589,6 +594,7 @@ func main() {
 	templateData.Title = "VVR-OSM Haltestellenabgleich"
 	templateData.Stats.VvrStops = vvrBusStopSum
 	templateData.Stats.OsmStops = totalOsmElements
+	templateData.Stats.OsmStopsNoName = osmStopsNoName
 	templateData.Stats.RemainingVvrStops = remainingVvrStops
 	templateData.Stats.RemainingOsmStops = remainingOsmElements
 	templateData.Stats.OsmStopsMatchingVvr = totalOsmElements - remainingOsmElements
