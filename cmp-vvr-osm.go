@@ -2,10 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -14,6 +16,7 @@ import (
 const lockFile = ".lock"
 const cacheDir = "cache"
 const vvrDataFile = "vvr.json"
+const vvrSearchURL = "https://vvr.verbindungssuche.de/fpl/suhast.php?&query="
 
 // flags
 var debug = flag.Bool("d", false, "get debug output (implies verbose mode)")
@@ -21,36 +24,26 @@ var verbose = flag.Bool("verbose", false, "verbose mode")
 
 // non-const consts
 var cities = [...]string{"Altefähr", "Kramerhof", "Parow", "Prohn", "Stralsund"}
-
-func printElapsedTime(start time.Time) {
-	if *debug {
-		log.Printf("printElapsedTime: time elapsed %.2fs\n", time.Since(start).Seconds())
-	}
-}
+var httpClient = &http.Client{Timeout: 10 * time.Second}
 
 // type definitions
 // VvrBusStop represents all info from VVR belonging to one bus stop
 type VvrBusStop struct {
-	ID    int    `json:"id"`
+	ID    string `json:"id"`
 	Value string `json:"value"`
 	Label string `json:"label"`
 }
 
-// VvrSearchResult holds the json response from the VVR search api
-type VvrSearchResult struct {
-	VvrBusStops []VvrBusStop
-}
-
-// VvrCity holds the VVR data and what was searched for via the API
+// VvrCity holds the VVR data and some meta data about it
 type VvrCity struct {
 	SearchWord      string
 	ResultTimeStamp time.Time
-	Vvr             VvrSearchResult
+	Result          []VvrBusStop
 }
 
 // VvrData holds the VVR data, the OSM data and some meta data for one city
 type VvrData struct {
-	cityResults []VvrCity
+	CityResults []VvrCity
 }
 
 // functions
@@ -79,7 +72,7 @@ func readCurrentJSON(i interface{}) error {
 		if *debug {
 			log.Println("readCurrentJSON: found *VvrData type")
 		}
-		jsonFilePath = string(cacheDir) + string(os.PathSeparator) + vvrDataFile
+		jsonFilePath = cacheDir + string(os.PathSeparator) + vvrDataFile
 	default:
 		log.Fatalln("readCurrentJSON: unkown type for reading json")
 		return nil
@@ -111,6 +104,56 @@ func readCurrentJSON(i interface{}) error {
 		return err
 	}
 	return nil
+}
+
+func writeNewJSON(i interface{}) error {
+	if *debug {
+		log.Println("writeNewJSON: given type:")
+		log.Printf("%T\n", i)
+	}
+	var jsonFilePath string
+	switch i.(type) {
+	case VvrData:
+		if *debug {
+			log.Println("found VvrData type")
+		}
+		if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
+			os.Mkdir(cacheDir, os.ModePerm)
+		}
+		jsonFilePath = cacheDir + string(os.PathSeparator) + vvrDataFile
+	default:
+		return errors.New("unkown data type for writing json")
+	}
+	b, err := json.Marshal(i)
+	if err != nil {
+		if *debug {
+			log.Println("writeNewJSON: error while marshalling data json", err)
+		}
+		return err
+	}
+	err = ioutil.WriteFile(jsonFilePath, b, 0644)
+	if err != nil {
+		if *debug {
+			log.Println("writeNewJSON: error while writing data json", err)
+		}
+		return err
+	}
+	return nil
+}
+
+func getJson(url string, target interface{}) error {
+	r, err := httpClient.Get(url)
+	if err != nil {
+		return err
+	}
+	defer r.Body.Close()
+	return json.NewDecoder(r.Body).Decode(target)
+}
+
+func printElapsedTime(start time.Time) {
+	if *debug {
+		log.Printf("printElapsedTime: time elapsed %.2fs\n", time.Since(start).Seconds())
+	}
 }
 
 func main() {
@@ -167,12 +210,33 @@ func main() {
 	if *verbose {
 		log.Println("reading data json file into memory")
 	}
-	var vvr VvrData
-	err = readCurrentJSON(&vvr)
+	var oldVvr VvrData
+	err = readCurrentJSON(&oldVvr)
 	if err != nil {
 		removeLockFile(lockFile)
 		panic(err)
 	}
-	log.Println(vvr)
+
+	var newVvr VvrData
+	for i := 0; i < len(cities); i++ {
+		var newVvrCity VvrCity
+		var newResult []VvrBusStop
+		getURL := vvrSearchURL + cities[i]
+		err = getJson(getURL, &newResult)
+		if err != nil {
+			log.Println("error getting http json for", getURL)
+			log.Println("error is", err)
+			continue
+		}
+		newVvrCity.SearchWord = cities[i]
+		newVvrCity.ResultTimeStamp = time.Now()
+		newVvrCity.Result = newResult
+		newVvr.CityResults = append(newVvr.CityResults, newVvrCity)
+	}
+	log.Println(newVvr)
+	err = writeNewJSON(newVvr)
+	if err != nil {
+		log.Printf("error writing json: %v", err)
+	}
 
 }
