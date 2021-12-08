@@ -63,7 +63,7 @@ type VvrData struct {
 
 type OsmElement struct {
 	Type string  `json:"type"`
-	ID   int     `json:"id"`
+	ID   int64   `json:"id"`
 	Lat  float64 `json:"lat"`
 	Lon  float64 `json:"lon"`
 	Tags struct {
@@ -291,6 +291,9 @@ func doesOsmElementMatchVvrElement(osm OsmElement, vvrName string, cities []stri
 }
 
 func writeTemplateToHTML(templateData TemplateData) {
+	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+		os.Mkdir(outputDir, os.ModePerm)
+	}
 	f, err := os.Create(outputDir + string(os.PathSeparator) + templateName + ".html")
 	if err != nil {
 		log.Println("writeTemplateToHTML", err)
@@ -394,10 +397,6 @@ func main() {
 					log.Printf("data in cache is older than %d hours, trying to get fresh data\n", cacheTimeVvrInHours)
 				}
 				isNewApiCallNeeded = true
-			} else {
-				if *debug {
-					log.Printf("reusing data from cache (cause it's not older than %d hours)\n", cacheTimeVvrInHours)
-				}
 			}
 		} else {
 			isNewApiCallNeeded = true
@@ -505,7 +504,7 @@ func main() {
 			}
 			if !vvrIsDuplicate {
 				oneMatch.City = newVvr.CityResults[i].SearchWord
-				var removeOsmElementsByID []int
+				var removeOsmElementsByID []int64
 				for m := 0; m < len(newOverpassData.Elements); m++ {
 					if doesOsmElementMatchVvrElement(newOverpassData.Elements[m], oneMatch.Name, extractedCities) {
 						oneMatch.Elements = append(oneMatch.Elements, newOverpassData.Elements[m])
@@ -568,8 +567,8 @@ func main() {
 		result[i].OsmReference = ""
 		for k := 0; k < len(mbs[i].Elements); k++ {
 			object := mbs[i].Elements[k]
-			objectURL := "http://osm.org/" + object.Type + "/" + strconv.Itoa(object.ID)
-			result[i].OsmReference = result[i].OsmReference + "<a href=\"" + objectURL + "\">" + object.Type + " " + strconv.Itoa(object.ID) + "</a><br />"
+			objectURL := "http://osm.org/" + object.Type + "/" + strconv.FormatInt(object.ID, 10)
+			result[i].OsmReference = result[i].OsmReference + "<a href=\"" + objectURL + "\">" + object.Type + " " + strconv.FormatInt(object.ID, 10) + "</a><br />"
 			if object.Tags.Highway == "bus_stop" {
 				result[i].NrBusStops++
 			}
