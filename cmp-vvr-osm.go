@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -113,10 +114,18 @@ type MatchResult struct {
 	OsmReference    string
 }
 
+type Statistics struct {
+	VvrStops          int
+	OsmStops          int
+	RemainingVvrStops int
+	RemainingOsmStops int
+}
+
 type TemplateData struct {
 	Rows    []MatchResult
 	GenDate time.Time
 	Title   string
+	Stats   Statistics
 }
 
 // functions
@@ -249,11 +258,7 @@ func doesOsmElementMatchVvrElement(osm OsmElement, name string, city string) boo
 	return osm.Tags.Name == name
 }
 
-func writeTemplateToHTML(rows []MatchResult) {
-	var templateData TemplateData
-	templateData.Rows = rows
-	templateData.GenDate = time.Now()
-	templateData.Title = "VVR-OSM Haltestellenabgleich"
+func writeTemplateToHTML(templateData TemplateData) {
 	f, err := os.Create(outputDir + string(os.PathSeparator) + templateName + ".html")
 	if err != nil {
 		log.Println("writeTemplateToHTML", err)
@@ -269,6 +274,15 @@ func writeTemplateToHTML(rows []MatchResult) {
 		log.Println("writeTemplateToHTML", err)
 	}
 	htmlSource.Execute(f, templateData)
+}
+
+func doesNameExistAlreadyInArray(mbs []MatchedBusStop, name string) int {
+	for i := 0; i < len(mbs); i++ {
+		if mbs[i].Name == name {
+			return i
+		}
+	}
+	return -1
 }
 
 // main
@@ -324,7 +338,9 @@ func main() {
 		panic(err)
 	}
 
+	// get the VVR data
 	var newVvr VvrData
+	vvrBusStopSum := 0
 	for i := 0; i < len(cities); i++ {
 		var newVvrCity VvrCity
 		var newResult []VvrBusStop
@@ -364,8 +380,10 @@ func main() {
 			newVvrCity.ResultTimeStamp = time.Now()
 			newVvrCity.Result = newResult
 			newVvr.CityResults = append(newVvr.CityResults, newVvrCity)
+			vvrBusStopSum += len(newVvrCity.Result)
 		} else {
 			newVvr.CityResults = append(newVvr.CityResults, *oldVvrCity)
+			vvrBusStopSum += len(oldVvrCity.Result)
 		}
 	}
 	err = writeNewJSON(newVvr)
@@ -385,8 +403,12 @@ func main() {
 
 	// TOOD get fresh data from overpass
 
+	totalOsmElements := len(oldOverpassData.Elements)
+	if *debug {
+		log.Println("oldOverpassData.Elements before matching:", len(oldOverpassData.Elements))
+	}
+	// match VVR data with OSM Elements
 	var mbs []MatchedBusStop
-	// at first load all bus stops into
 	insaneLoops := 0
 	for i := 0; i < len(newVvr.CityResults); i++ {
 		for k := 0; k < len(newVvr.CityResults[i].Result); k++ {
@@ -395,23 +417,44 @@ func main() {
 			oneMatch.Name = oneBusStop.Value
 			oneMatch.VvrID = oneBusStop.ID
 			oneMatch.City = newVvr.CityResults[i].SearchWord
+			var removeOsmElementsByID []int
 			for m := 0; m < len(oldOverpassData.Elements); m++ {
 				if doesOsmElementMatchVvrElement(oldOverpassData.Elements[m], oneMatch.Name, oneMatch.City) {
 					oneMatch.Elements = append(oneMatch.Elements, oldOverpassData.Elements[m])
-				} else {
-					var notInVvrButInOsm MatchedBusStop
-					notInVvrButInOsm.City = newVvr.CityResults[i].SearchWord
-					notInVvrButInOsm.Name = oldOverpassData.Elements[m].Tags.Name
-					notInVvrButInOsm.Elements = append(notInVvrButInOsm.Elements, oldOverpassData.Elements[m])
-					mbs = append(mbs, notInVvrButInOsm)
+					removeOsmElementsByID = append(removeOsmElementsByID, oldOverpassData.Elements[m].ID)
 				}
 				insaneLoops++
+			}
+			// remove the elements we already matched
+			for n := 0; n < len(removeOsmElementsByID); n++ {
+				toDeleteOsmId := removeOsmElementsByID[n]
+				for p := 0; p < len(oldOverpassData.Elements); p++ {
+					if oldOverpassData.Elements[p].ID == toDeleteOsmId {
+						oldOverpassData.Elements = append(oldOverpassData.Elements[:p], oldOverpassData.Elements[p+1:]...)
+						continue
+					}
+				}
 			}
 			mbs = append(mbs, oneMatch)
 		}
 	}
+	remainingOsmElements := len(oldOverpassData.Elements)
 	if *debug {
 		log.Println("insane looping finished:", insaneLoops)
+		log.Println("oldOverpassData.Elements left after matching:", len(oldOverpassData.Elements))
+	}
+
+	// append remaining OSM elements, which couldn't be matched
+	for i := 0; i < len(oldOverpassData.Elements); i++ {
+		index := doesNameExistAlreadyInArray(mbs, oldOverpassData.Elements[i].Tags.Name)
+		if index >= 0 {
+			mbs[index].Elements = append(mbs[index].Elements, oldOverpassData.Elements[i])
+		} else {
+			var notInVvrButInOsm MatchedBusStop
+			notInVvrButInOsm.Name = oldOverpassData.Elements[i].Tags.Name
+			notInVvrButInOsm.Elements = append(notInVvrButInOsm.Elements, oldOverpassData.Elements[i])
+			mbs = append(mbs, notInVvrButInOsm)
+		}
 	}
 
 	result := make([]MatchResult, len(mbs))
@@ -429,7 +472,20 @@ func main() {
 		result[i].NrStopPositions = 0
 		result[i].Name = mbs[i].Name
 		result[i].OsmReference = ""
+		for k := 0; k < len(mbs[i].Elements); k++ {
+			object := mbs[i].Elements[k]
+			objectURL := "http://osm.org/" + object.Type + "/" + strconv.Itoa(object.ID)
+			result[i].OsmReference = result[i].OsmReference + "<a href=\"" + objectURL + "\">" + objectURL + "</a><br />"
+		}
 	}
 
-	writeTemplateToHTML(result)
+	var templateData TemplateData
+	templateData.Rows = result
+	templateData.GenDate = time.Now()
+	templateData.Title = "VVR-OSM Haltestellenabgleich"
+	templateData.Stats.VvrStops = vvrBusStopSum
+	templateData.Stats.OsmStops = totalOsmElements
+	templateData.Stats.RemainingVvrStops = -1
+	templateData.Stats.RemainingOsmStops = remainingOsmElements
+	writeTemplateToHTML(templateData)
 }
