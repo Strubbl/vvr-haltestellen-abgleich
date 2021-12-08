@@ -17,11 +17,12 @@ const cacheDir = "cache"
 const cacheTimeHours = 23
 const lockFile = ".lock"
 const overpassDataFile = "overpass.json"
-const overpassURL = "http://overpass-api.de/api/interpreter?data="
 const vvrDataFile = "vvr.json"
 const vvrSearchURL = "https://vvr.verbindungssuche.de/fpl/suhast.php?&query="
 
-// between prefix and suffix a list of cities divided only by a pipe | is expected
+// search area can be extended by append more areas with a pipe
+const overpassSearchArea = "Stralsund"
+const overpassURL = "http://overpass-api.de/api/interpreter?data="
 const overpassQueryPrefix = "[out:json][timeout:600];area[boundary=administrative][admin_level=8][name~'("
 const overpassQuerySuffix = ")']->.searchArea;(nw[\"highway\"=\"bus_stop\"](area.searchArea);node[\"public_transport\"=\"stop_position\"](area.searchArea););out;"
 
@@ -30,7 +31,7 @@ var debug = flag.Bool("d", false, "get debug output (implies verbose mode)")
 var verbose = flag.Bool("verbose", false, "verbose mode")
 
 // non-const consts
-var cities = [...]string{"Altefähr", "Kramerhof", "Parow", "Prohn", "Stralsund"}
+var cities = [...]string{"Altefähr", "Klein Kedingshagen", "Kramerhof", "Parow", "Prohn", "Stralsund"}
 var httpClient = &http.Client{Timeout: 10 * time.Second}
 
 // type definitions
@@ -96,8 +97,13 @@ type MatchedBusStop struct {
 }
 
 type MatchResult struct {
-	Name  string
-	VvrID string
+	ID              int
+	Name            string
+	IsInVVR         bool
+	IsInOSM         bool
+	NrPlatforms     int
+	NrStopPositions int
+	OsmReference    string
 }
 
 // functions
@@ -225,17 +231,6 @@ func getCityResultFromData(cityName string, vvr VvrData) *VvrCity {
 	return nil
 }
 
-func getOverpassQueryURL() string {
-	citiesPiped := ""
-	for i := 0; i < len(cities); i++ {
-		citiesPiped = citiesPiped + cities[i]
-		if i+1 != len(cities) {
-			citiesPiped = citiesPiped + "|"
-		}
-	}
-	return overpassURL + overpassQueryPrefix + citiesPiped + overpassQuerySuffix
-}
-
 func doesOsmElementMatchVvrElement(osm OsmElement, name string, city string) bool {
 	// TODO use city to find more false negatives
 	return osm.Tags.Name == name
@@ -337,12 +332,11 @@ func main() {
 			newVvr.CityResults = append(newVvr.CityResults, *oldVvrCity)
 		}
 	}
-	log.Println(newVvr)
 	err = writeNewJSON(newVvr)
 	if err != nil {
 		log.Printf("error writing json with VVR data: %v\n", err)
 	}
-	overpassQuery := getOverpassQueryURL()
+	overpassQuery := overpassURL + overpassQueryPrefix + overpassSearchArea + overpassQuerySuffix
 	if *debug {
 		log.Println("overpassQuery:", overpassQuery)
 	}
@@ -352,11 +346,9 @@ func main() {
 		removeLockFile(lockFile)
 		panic(err)
 	}
-	log.Println("TimestampAreasBase:", oldOverpassData.Osm3S.TimestampAreasBase)
-	log.Println("TimestampOsmBase:", oldOverpassData.Osm3S.TimestampOsmBase)
+
 	// TOOD get fresh data from overpass
 
-	// compare
 	var mbs []MatchedBusStop
 	// at first load all bus stops into
 	insaneLoops := 0
@@ -386,4 +378,22 @@ func main() {
 		log.Println("insane looping finished:", insaneLoops)
 	}
 
+	result := make([]MatchResult, len(mbs))
+	for i := 0; i < len(mbs); i++ {
+		result[i].ID = i
+		result[i].IsInOSM = false
+		if len(mbs[i].Elements) > 0 {
+			result[i].IsInOSM = true
+		}
+		result[i].IsInVVR = false
+		if mbs[i].VvrID != "" {
+			result[i].IsInVVR = true
+		}
+		result[i].NrPlatforms = 0
+		result[i].NrStopPositions = 0
+		result[i].Name = mbs[i].Name
+		result[i].OsmReference = ""
+
+		log.Println(result[i])
+	}
 }
