@@ -17,7 +17,8 @@ import (
 )
 
 const cacheDir = "cache"
-const cacheTimeHours = 23
+const cacheTimeOverpassInHours = 23
+const cacheTimeVvrInHours = 167
 const lockFile = ".lock"
 const outputDir = "output"
 const overpassDataFile = "overpass.json"
@@ -379,15 +380,15 @@ func main() {
 			if *debug {
 				log.Printf("found old result for %s, checking for timestamp %s\n", oldVvrCity.SearchWord, oldVvrCity.ResultTimeStamp)
 			}
-			cacheTime := time.Now().Add(-1 * cacheTimeHours * time.Hour)
+			cacheTime := time.Now().Add(-1 * cacheTimeVvrInHours * time.Hour)
 			if oldVvrCity.ResultTimeStamp.Before(cacheTime) {
 				if *debug {
-					log.Printf("data in cache is older than %d hours, trying to get fresh data\n", cacheTimeHours)
+					log.Printf("data in cache is older than %d hours, trying to get fresh data\n", cacheTimeVvrInHours)
 				}
 				isNewApiCallNeeded = true
 			} else {
 				if *debug {
-					log.Printf("reusing data from cache (cause it's not older than %d hours)\n", cacheTimeHours)
+					log.Printf("reusing data from cache (cause it's not older than %d hours)\n", cacheTimeVvrInHours)
 				}
 			}
 		} else {
@@ -429,7 +430,7 @@ func main() {
 		panic(err)
 	}
 	var newOverpassData OverpassData
-	cacheTime := time.Now().Add(-1 * cacheTimeHours * time.Hour)
+	cacheTime := time.Now().Add(-1 * cacheTimeOverpassInHours * time.Hour)
 	isWriteOverpassJson := false
 	if oldOverpassData.Osm3S.TimestampOsmBase.Before(cacheTime) {
 		err = getJson(overpassQuery, &newOverpassData)
@@ -442,7 +443,7 @@ func main() {
 		isWriteOverpassJson = true
 	} else {
 		if *debug {
-			log.Println("reusing old overpass data from cache")
+			log.Println("reusing old overpass data from cache, data is not older than hours:", cacheTimeOverpassInHours)
 		}
 		newOverpassData = oldOverpassData
 	}
