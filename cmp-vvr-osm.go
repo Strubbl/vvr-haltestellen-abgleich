@@ -13,11 +13,17 @@ import (
 	"time"
 )
 
-const lockFile = ".lock"
 const cacheDir = "cache"
+const cacheTimeHours = 23
+const lockFile = ".lock"
+const overpassDataFile = "overpass.json"
+const overpassURL = "http://overpass-api.de/api/interpreter?data="
 const vvrDataFile = "vvr.json"
 const vvrSearchURL = "https://vvr.verbindungssuche.de/fpl/suhast.php?&query="
-const cacheTimeHours = 23
+
+// between prefix and suffix a list of cities divided only by a pipe | is expected
+const overpassQueryPrefix = "[out:json][timeout:600];area[boundary=administrative][admin_level=8][name~'("
+const overpassQuerySuffix = ")']->.searchArea;(nw[\"highway\"=\"bus_stop\"](area.searchArea);node[\"public_transport\"=\"stop_position\"](area.searchArea););out;"
 
 // flags
 var debug = flag.Bool("d", false, "get debug output (implies verbose mode)")
@@ -47,6 +53,43 @@ type VvrData struct {
 	CityResults []VvrCity
 }
 
+type OsmTag struct {
+	OsmKey   string
+	OsmValue string
+}
+
+// OverpassData holds the OSM data queried via overpass api
+type OverpassData struct {
+	Version   float64 `json:"version"`
+	Generator string  `json:"generator"`
+	Osm3S     struct {
+		TimestampOsmBase   time.Time `json:"timestamp_osm_base"`
+		TimestampAreasBase time.Time `json:"timestamp_areas_base"`
+		Copyright          string    `json:"copyright"`
+	} `json:"osm3s"`
+	Elements []struct {
+		Type string  `json:"type"`
+		ID   int     `json:"id"`
+		Lat  float64 `json:"lat"`
+		Lon  float64 `json:"lon"`
+		Tags struct {
+			Bench            string `json:"bench"`
+			Bin              string `json:"bin"`
+			Bus              string `json:"bus"`
+			CheckDateShelter string `json:"check_date:shelter"`
+			DeparturesBoard  string `json:"departures_board"`
+			Highway          string `json:"highway"`
+			Lit              string `json:"lit"`
+			Name             string `json:"name"`
+			Operator         string `json:"operator"`
+			PublicTransport  string `json:"public_transport"`
+			Shelter          string `json:"shelter"`
+			TactilePaving    string `json:"tactile_paving"`
+			Wheelchair       string `json:"wheelchair"`
+		} `json:"tags,omitempty"`
+	} `json:"elements"`
+}
+
 // functions
 func removeLockFile(lf string) {
 	if *debug {
@@ -74,6 +117,12 @@ func readCurrentJSON(i interface{}) error {
 			log.Println("readCurrentJSON: found *VvrData type")
 		}
 		jsonFilePath = cacheDir + string(os.PathSeparator) + vvrDataFile
+	case *OverpassData:
+		if *debug {
+			log.Println("readCurrentJSON: found *OverpassData type")
+		}
+		jsonFilePath = cacheDir + string(os.PathSeparator) + overpassDataFile
+
 	default:
 		log.Fatalln("readCurrentJSON: unkown type for reading json")
 		return nil
@@ -164,6 +213,17 @@ func getCityResultFromData(cityName string, vvr VvrData) *VvrCity {
 		}
 	}
 	return nil
+}
+
+func getOverpassQueryURL() string {
+	citiesPiped := ""
+	for i := 0; i < len(cities); i++ {
+		citiesPiped = citiesPiped + cities[i]
+		if i+1 != len(cities) {
+			citiesPiped = citiesPiped + "|"
+		}
+	}
+	return overpassURL + overpassQueryPrefix + citiesPiped + overpassQuerySuffix
 }
 
 func main() {
@@ -267,5 +327,17 @@ func main() {
 	if err != nil {
 		log.Printf("error writing json with VVR data: %v\n", err)
 	}
-
+	overpassQuery := getOverpassQueryURL()
+	if *debug {
+		log.Println("overpassQuery:", overpassQuery)
+	}
+	var oldOverpassData OverpassData
+	err = readCurrentJSON(&oldOverpassData)
+	if err != nil {
+		removeLockFile(lockFile)
+		panic(err)
+	}
+	log.Println("TimestampAreasBase:", oldOverpassData.Osm3S.TimestampAreasBase)
+	log.Println("TimestampOsmBase:", oldOverpassData.Osm3S.TimestampOsmBase)
+	// TOOD get fresh data from overpass
 }
