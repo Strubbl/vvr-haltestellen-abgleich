@@ -17,6 +17,7 @@ const lockFile = ".lock"
 const cacheDir = "cache"
 const vvrDataFile = "vvr.json"
 const vvrSearchURL = "https://vvr.verbindungssuche.de/fpl/suhast.php?&query="
+const cacheTimeHours = 23
 
 // flags
 var debug = flag.Bool("d", false, "get debug output (implies verbose mode)")
@@ -84,7 +85,7 @@ func readCurrentJSON(i interface{}) error {
 	if _, err := os.Stat(jsonFilePath); os.IsNotExist(err) {
 		// in case file does not exist, we cannot prefill the data from json
 		if *verbose { // not fatal, just start with a new one
-			log.Printf("file does not exist %s", jsonFilePath)
+			log.Printf("file does not exist %s\n", jsonFilePath)
 		}
 		return nil
 	}
@@ -156,6 +157,15 @@ func printElapsedTime(start time.Time) {
 	}
 }
 
+func getCityResultFromData(cityName string, vvr VvrData) *VvrCity {
+	for i := 0; i < len(vvr.CityResults); i++ {
+		if vvr.CityResults[i].SearchWord == cityName {
+			return &vvr.CityResults[i]
+		}
+	}
+	return nil
+}
+
 func main() {
 	start := time.Now()
 	defer printElapsedTime(start)
@@ -166,14 +176,14 @@ func main() {
 	// Flag handling
 	flag.Parse()
 	if *debug && len(flag.Args()) > 0 {
-		log.Printf("non-flag args=%v", strings.Join(flag.Args(), " "))
+		log.Printf("non-flag args=%v\n", strings.Join(flag.Args(), " "))
 	}
 
 	if *verbose && !*debug {
-		log.Printf("verbose mode")
+		log.Println("verbose mode")
 	}
 	if *debug {
-		log.Printf("debug mode")
+		log.Println("debug mode")
 		// debug implies verbose
 		*verbose = true
 	}
@@ -181,22 +191,13 @@ func main() {
 	// check if lock file exists and exit, so we do not run this process two times
 	if _, err := os.Stat(lockFile); os.IsNotExist(err) {
 		if *debug {
-			log.Printf("no lockfile %s present", lockFile)
+			log.Printf("no lockfile %s present\n", lockFile)
 		}
 	} else {
 		fmt.Printf("abort: lock file exists %s\n", lockFile)
 		os.Exit(1)
 	}
 
-	// check if lock file exists and exit, so we do not run this process two times
-	if _, err := os.Stat(lockFile); os.IsNotExist(err) {
-		if *debug {
-			log.Printf("main: no lockfile %s present", lockFile)
-		}
-	} else {
-		fmt.Printf("abort: lock file exists %s\n", lockFile)
-		os.Exit(1)
-	}
 	// create lock file and delete it on exit of main
 	err := ioutil.WriteFile(lockFile, nil, 0644)
 	if err != nil {
@@ -221,22 +222,50 @@ func main() {
 	for i := 0; i < len(cities); i++ {
 		var newVvrCity VvrCity
 		var newResult []VvrBusStop
-		getURL := vvrSearchURL + cities[i]
-		err = getJson(getURL, &newResult)
-		if err != nil {
-			log.Println("error getting http json for", getURL)
-			log.Println("error is", err)
-			continue
+		isNewApiCallNeeded := false
+		oldVvrCity := getCityResultFromData(cities[i], oldVvr)
+		if oldVvrCity != nil {
+			if *debug {
+				log.Printf("found old result for %s, checking for timestamp %s\n", oldVvrCity.SearchWord, oldVvrCity.ResultTimeStamp)
+			}
+			cacheTime := time.Now().Add(-1 * cacheTimeHours * time.Hour)
+			if oldVvrCity.ResultTimeStamp.Before(cacheTime) {
+				if *debug {
+					log.Printf("data in cache is older than %d hours, trying to get fresh data\n", cacheTimeHours)
+				}
+				isNewApiCallNeeded = true
+			} else {
+				if *debug {
+					log.Printf("reusing data from cache (cause it's not older than %d hours)\n", cacheTimeHours)
+				}
+			}
+		} else {
+			isNewApiCallNeeded = true
 		}
-		newVvrCity.SearchWord = cities[i]
-		newVvrCity.ResultTimeStamp = time.Now()
-		newVvrCity.Result = newResult
-		newVvr.CityResults = append(newVvr.CityResults, newVvrCity)
+		if isNewApiCallNeeded {
+			getURL := vvrSearchURL + cities[i]
+			err = getJson(getURL, &newResult)
+			if err != nil {
+				log.Println("error getting http json for", getURL)
+				log.Println("error is", err)
+				if oldVvrCity != nil {
+					log.Printf("reusing old cache data for %s due to the GET error\n", cities[i])
+					newVvr.CityResults = append(newVvr.CityResults, *oldVvrCity)
+				}
+				continue
+			}
+			newVvrCity.SearchWord = cities[i]
+			newVvrCity.ResultTimeStamp = time.Now()
+			newVvrCity.Result = newResult
+			newVvr.CityResults = append(newVvr.CityResults, newVvrCity)
+		} else {
+			newVvr.CityResults = append(newVvr.CityResults, *oldVvrCity)
+		}
 	}
 	log.Println(newVvr)
 	err = writeNewJSON(newVvr)
 	if err != nil {
-		log.Printf("error writing json: %v", err)
+		log.Printf("error writing json with VVR data: %v\n", err)
 	}
 
 }
