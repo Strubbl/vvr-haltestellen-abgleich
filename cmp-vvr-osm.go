@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -10,10 +11,11 @@ import (
 )
 
 const lockFile = ".lock"
+const cacheDir = "cache"
+const vvrDataFile = "vvr.json"
 
 // flags
 var debug = flag.Bool("d", false, "get debug output (implies verbose mode)")
-var debugDebug = flag.Bool("dd", false, "get even more debug output like data (implies debug mode)")
 var verbose = flag.Bool("verbose", false, "verbose mode")
 
 // non-const consts
@@ -25,6 +27,26 @@ func printElapsedTime(start time.Time) {
 	}
 }
 
+// type definitions
+// VvrBusStop represents all info from VVR belonging to one bus stop
+type VvrBusStop struct {
+	ID    int    `json:"id"`
+	Value string `json:"value"`
+	Label string `json:"label"`
+}
+
+// VvrData holds the json response from the VVR search api
+type VvrData struct {
+	VvrBusStops []VvrBusStop
+}
+
+// CompareDataSet holds the VVR data, the OSM data and some meta data for one city
+type CompareDataSet struct {
+	SearchWord string
+	Vvr        VvrData
+}
+
+// functions
 func removeLockFile(lf string) {
 	if *debug {
 		log.Printf("removeLockFile: trying to delete %s\n", lf)
@@ -52,7 +74,7 @@ func main() {
 	if *verbose && !*debug {
 		log.Printf("verbose mode")
 	}
-	if *debug && !*debugDebug {
+	if *debug {
 		log.Printf("debug mode")
 		// debug implies verbose
 		*verbose = true
@@ -61,7 +83,7 @@ func main() {
 	// check if lock file exists and exit, so we do not run this process two times
 	if _, err := os.Stat(lockFile); os.IsNotExist(err) {
 		if *debug {
-			log.Printf("main: no lockfile %s present", lockFile)
+			log.Printf("no lockfile %s present", lockFile)
 		}
 	} else {
 		fmt.Printf("abort: lock file exists %s\n", lockFile)
@@ -77,5 +99,14 @@ func main() {
 		fmt.Printf("abort: lock file exists %s\n", lockFile)
 		os.Exit(1)
 	}
+	// create lock file and delete it on exit of main
+	err := ioutil.WriteFile(lockFile, nil, 0644)
+	if err != nil {
+		if *debug {
+			log.Println("main: error while writing lock file")
+		}
+		panic(err)
+	}
+
 	defer removeLockFile(lockFile)
 }
