@@ -27,12 +27,10 @@ const vvrDataFile = "vvr.json"
 const vvrSearchURL = "https://vvr.verbindungssuche.de/fpl/suhast.php?&query="
 
 // search area can be extended by append more areas with a pipe
-const overpassSearchArea = "Stralsund"
+const overpassSearchArea = "Altefähr|Kramerhof|Stralsund"
 const overpassURL = "http://overpass-api.de/api/interpreter?data="
 const overpassQueryPrefix = "[out:json][timeout:600];area[boundary=administrative][admin_level=8][name~'("
-const overpassQuerySuffix = ")']->.searchArea;(nw[\"highway\"=\"bus_stop\"](area.searchArea);node[\"public_transport\"=\"stop_position\"](area.searchArea););out;"
-
-//const overpassQuerySuffix = ")']->.searchArea;(nw[\"highway\"=\"bus_stop\"](area.searchArea);node[\"public_transport\"=\"stop_position\"](area.searchArea););out%20center;"
+const overpassQuerySuffix = ")']->.searchArea;(nw[\"public_transport\"=\"platform\"][\"bus\"](area.searchArea);node[\"public_transport\"=\"stop_position\"][\"bus\"](area.searchArea);node[\"highway\"=\"bus_stop\"](area.searchArea););out;"
 
 // flags
 var debug = flag.Bool("d", false, "get debug output (implies verbose mode)")
@@ -40,7 +38,7 @@ var verbose = flag.Bool("verbose", false, "verbose mode")
 
 // non-const consts
 var cities = [...]string{"Altefähr", "Klein Kedingshagen", "Kramerhof", "Parow", "Prohn", "Stralsund"}
-var httpClient = &http.Client{Timeout: 10 * time.Second}
+var httpClient = &http.Client{Timeout: 1000 * time.Second}
 
 // type definitions
 // VvrBusStop represents all info from VVR belonging to one bus stop
@@ -209,6 +207,14 @@ func writeNewJSON(i interface{}) error {
 			os.Mkdir(cacheDir, os.ModePerm)
 		}
 		jsonFilePath = cacheDir + string(os.PathSeparator) + vvrDataFile
+	case OverpassData:
+		if *debug {
+			log.Println("found OverpassData type")
+		}
+		if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
+			os.Mkdir(cacheDir, os.ModePerm)
+		}
+		jsonFilePath = cacheDir + string(os.PathSeparator) + overpassDataFile
 	default:
 		return errors.New("unkown data type for writing json")
 	}
@@ -390,6 +396,7 @@ func main() {
 	if err != nil {
 		log.Printf("error writing json with VVR data: %v\n", err)
 	}
+	// get OSM data
 	overpassQuery := overpassURL + overpassQueryPrefix + overpassSearchArea + overpassQuerySuffix
 	if *debug {
 		log.Println("overpassQuery:", overpassQuery)
@@ -400,12 +407,36 @@ func main() {
 		removeLockFile(lockFile)
 		panic(err)
 	}
+	// get the VVR data
+	var newOverpassData OverpassData
+	cacheTime := time.Now().Add(-1 * cacheTimeHours * time.Hour)
+	isWriteOverpassJson := false
+	if oldOverpassData.Osm3S.TimestampOsmBase.Before(cacheTime) {
+		err = getJson(overpassQuery, &newOverpassData)
+		if err != nil {
+			log.Println("error getting http json for", overpassQuery)
+			log.Println("error is", err)
+			log.Println("reusing old overpass cache data due to the GET error")
+			newOverpassData = oldOverpassData
+		}
+		isWriteOverpassJson = true
+	} else {
+		if *debug {
+			log.Println("reusing old overpass data from cache")
+		}
+		newOverpassData = oldOverpassData
+	}
+	if isWriteOverpassJson {
+		err = writeNewJSON(newOverpassData)
+		if err != nil {
+			log.Printf("error writing json with VVR data: %v\n", err)
+		}
 
-	// TOOD get fresh data from overpass
+	}
 
-	totalOsmElements := len(oldOverpassData.Elements)
+	totalOsmElements := len(newOverpassData.Elements)
 	if *debug {
-		log.Println("oldOverpassData.Elements before matching:", len(oldOverpassData.Elements))
+		log.Println("newOverpassData.Elements before matching:", len(newOverpassData.Elements))
 	}
 	// match VVR data with OSM Elements
 	var mbs []MatchedBusStop
@@ -418,19 +449,19 @@ func main() {
 			oneMatch.VvrID = oneBusStop.ID
 			oneMatch.City = newVvr.CityResults[i].SearchWord
 			var removeOsmElementsByID []int
-			for m := 0; m < len(oldOverpassData.Elements); m++ {
-				if doesOsmElementMatchVvrElement(oldOverpassData.Elements[m], oneMatch.Name, oneMatch.City) {
-					oneMatch.Elements = append(oneMatch.Elements, oldOverpassData.Elements[m])
-					removeOsmElementsByID = append(removeOsmElementsByID, oldOverpassData.Elements[m].ID)
+			for m := 0; m < len(newOverpassData.Elements); m++ {
+				if doesOsmElementMatchVvrElement(newOverpassData.Elements[m], oneMatch.Name, oneMatch.City) {
+					oneMatch.Elements = append(oneMatch.Elements, newOverpassData.Elements[m])
+					removeOsmElementsByID = append(removeOsmElementsByID, newOverpassData.Elements[m].ID)
 				}
 				insaneLoops++
 			}
 			// remove the elements we already matched
 			for n := 0; n < len(removeOsmElementsByID); n++ {
 				toDeleteOsmId := removeOsmElementsByID[n]
-				for p := 0; p < len(oldOverpassData.Elements); p++ {
-					if oldOverpassData.Elements[p].ID == toDeleteOsmId {
-						oldOverpassData.Elements = append(oldOverpassData.Elements[:p], oldOverpassData.Elements[p+1:]...)
+				for p := 0; p < len(newOverpassData.Elements); p++ {
+					if newOverpassData.Elements[p].ID == toDeleteOsmId {
+						newOverpassData.Elements = append(newOverpassData.Elements[:p], newOverpassData.Elements[p+1:]...)
 						continue
 					}
 				}
@@ -438,21 +469,21 @@ func main() {
 			mbs = append(mbs, oneMatch)
 		}
 	}
-	remainingOsmElements := len(oldOverpassData.Elements)
+	remainingOsmElements := len(newOverpassData.Elements)
 	if *debug {
 		log.Println("insane looping finished:", insaneLoops)
-		log.Println("oldOverpassData.Elements left after matching:", len(oldOverpassData.Elements))
+		log.Println("newOverpassData.Elements left after matching:", len(newOverpassData.Elements))
 	}
 
 	// append remaining OSM elements, which couldn't be matched
-	for i := 0; i < len(oldOverpassData.Elements); i++ {
-		index := doesNameExistAlreadyInArray(mbs, oldOverpassData.Elements[i].Tags.Name)
+	for i := 0; i < len(newOverpassData.Elements); i++ {
+		index := doesNameExistAlreadyInArray(mbs, newOverpassData.Elements[i].Tags.Name)
 		if index >= 0 {
-			mbs[index].Elements = append(mbs[index].Elements, oldOverpassData.Elements[i])
+			mbs[index].Elements = append(mbs[index].Elements, newOverpassData.Elements[i])
 		} else {
 			var notInVvrButInOsm MatchedBusStop
-			notInVvrButInOsm.Name = oldOverpassData.Elements[i].Tags.Name
-			notInVvrButInOsm.Elements = append(notInVvrButInOsm.Elements, oldOverpassData.Elements[i])
+			notInVvrButInOsm.Name = newOverpassData.Elements[i].Tags.Name
+			notInVvrButInOsm.Elements = append(notInVvrButInOsm.Elements, newOverpassData.Elements[i])
 			mbs = append(mbs, notInVvrButInOsm)
 		}
 	}
