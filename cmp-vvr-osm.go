@@ -37,7 +37,7 @@ var debug = flag.Bool("d", false, "get debug output (implies verbose mode)")
 var verbose = flag.Bool("verbose", false, "verbose mode")
 
 // non-const consts
-var cities = [...]string{"Altefähr", "Damgarten", "Damitz", "Garbodenhagen", "Grahlhof", "Grimmen", "Jarkvitz", "Kedingshagen", "Kramerhof", "Parow", "Prohn", "Sassnitz", "Scharpitz", "Stralsund", "Zarrendorf"}
+var cities = [...]string{"Altefähr", "Bakenberg", "Bartelshagen", "Barth", "Brandshagen", "Damgarten", "Damitz", "Dorf", "Dranske", "Garbodenhagen", "Grahlhof", "Grimmen", "Jarkvitz", "Kedingshagen", "Kordshagen", "Kramerhof", "Lüdershagen", "Mukran", "Neuendorf", "Parow", "Prohn", "Putgarten", "Ribnitz", "Sassnitz", "Scharpitz", "Steinhagen", "Stralsund", "Woldenitz", "Wolthof", "Zarrendorf"}
 var httpClient = &http.Client{Timeout: 1000 * time.Second}
 
 // type definitions
@@ -264,21 +264,24 @@ func getCityResultFromData(cityName string, vvr VvrData) *VvrCity {
 }
 
 func doesOsmElementMatchVvrElement(osm OsmElement, vvrName string) bool {
-	osmNameCleaned1 := strings.ReplaceAll(osm.Tags.Name, "-", " ")
-	osmNameCleaned2 := strings.ReplaceAll(osmNameCleaned1, "/", " ")
-	osmNameCleaned3 := strings.ReplaceAll(osmNameCleaned2, ",", "")
-	vvrNameCleaned1 := strings.ReplaceAll(vvrName, "-", " ")
-	vvrNameCleaned2 := strings.ReplaceAll(vvrNameCleaned1, "/", " ")
-	vvrNameCleaned3 := strings.ReplaceAll(vvrNameCleaned2, ",", "")
-	osmNameCleaned := osmNameCleaned3
-	vvrNameCleaned := vvrNameCleaned3
+	search := [...]string{"-", "/", ",", "ä", "ö", "ü", "ß"}
+	replace := [...]string{" ", " ", "", "ae", "oe", "ue", "ss"}
+	if len(search) != len(replace) {
+		log.Panicln("search and replace arrays do not have the same length")
+	}
+	osmNameCleaned := strings.ToLower(osm.Tags.Name)
+	vvrNameCleaned := strings.ToLower(vvrName)
+	for i := 0; i < len(search); i++ {
+		osmNameCleaned = strings.ReplaceAll(osmNameCleaned, search[i], replace[i])
+		vvrNameCleaned = strings.ReplaceAll(vvrNameCleaned, search[i], replace[i])
+	}
 	// exact match
 	if osmNameCleaned == vvrNameCleaned {
 		return true
 	}
 	// prefix OSM name with a city
 	for i := 0; i < len(cities); i++ {
-		if cities[i]+" "+osmNameCleaned == vvrNameCleaned {
+		if strings.ToLower(cities[i])+" "+osmNameCleaned == vvrNameCleaned {
 			return true
 		}
 	}
