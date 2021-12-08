@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -35,15 +36,21 @@ type VvrBusStop struct {
 	Label string `json:"label"`
 }
 
-// VvrData holds the json response from the VVR search api
-type VvrData struct {
+// VvrSearchResult holds the json response from the VVR search api
+type VvrSearchResult struct {
 	VvrBusStops []VvrBusStop
 }
 
-// CompareDataSet holds the VVR data, the OSM data and some meta data for one city
-type CompareDataSet struct {
-	SearchWord string
-	Vvr        VvrData
+// VvrCity holds the VVR data and what was searched for via the API
+type VvrCity struct {
+	SearchWord      string
+	ResultTimeStamp time.Time
+	Vvr             VvrSearchResult
+}
+
+// VvrData holds the VVR data, the OSM data and some meta data for one city
+type VvrData struct {
+	cityResults []VvrCity
 }
 
 // functions
@@ -56,6 +63,54 @@ func removeLockFile(lf string) {
 		log.Printf("removeLockFile: error while removing lock file %s\n", lf)
 		log.Panic(err)
 	}
+}
+
+func readCurrentJSON(i interface{}) error {
+	if *debug {
+		log.Println("readCurrentJSON")
+	}
+	var jsonFilePath string
+	if *debug {
+		log.Println("readCurrentJSON: given type:")
+		log.Printf("%T\n", i)
+	}
+	switch i.(type) {
+	case *VvrData:
+		if *debug {
+			log.Println("readCurrentJSON: found *VvrData type")
+		}
+		jsonFilePath = string(cacheDir) + string(os.PathSeparator) + vvrDataFile
+	default:
+		log.Fatalln("readCurrentJSON: unkown type for reading json")
+		return nil
+	}
+
+	if *debug {
+		log.Println("readCurrentJSON: jsonFilePath is", jsonFilePath)
+	}
+	if _, err := os.Stat(jsonFilePath); os.IsNotExist(err) {
+		// in case file does not exist, we cannot prefill the data from json
+		if *verbose { // not fatal, just start with a new one
+			log.Printf("file does not exist %s", jsonFilePath)
+		}
+		return nil
+	}
+	b, err := ioutil.ReadFile(jsonFilePath)
+	if err != nil {
+		if *debug {
+			log.Println("readCurrentJSON: error while ioutil.ReadFile", err)
+		}
+		fmt.Println(err)
+		return err
+	}
+	err = json.Unmarshal(b, i)
+	if err != nil {
+		if *debug {
+			log.Println("readCurrentJSON: error while json.Unmarshal", err)
+		}
+		return err
+	}
+	return nil
 }
 
 func main() {
@@ -107,6 +162,17 @@ func main() {
 		}
 		panic(err)
 	}
-
 	defer removeLockFile(lockFile)
+
+	if *verbose {
+		log.Println("reading data json file into memory")
+	}
+	var vvr VvrData
+	err = readCurrentJSON(&vvr)
+	if err != nil {
+		removeLockFile(lockFile)
+		panic(err)
+	}
+	log.Println(vvr)
+
 }
