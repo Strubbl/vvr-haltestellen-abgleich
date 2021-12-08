@@ -38,7 +38,7 @@ var debug = flag.Bool("d", false, "get debug output (implies verbose mode)")
 var verbose = flag.Bool("verbose", false, "verbose mode")
 
 // non-const consts
-var cities = [...]string{"Altefähr", "Altenkirchen", "Bahnhof", "Bakenberg", "Bartelshagen", "Barth", "Brandshagen", "Damgarten", "Damitz", "Dorf", "Dranske", "Garbodenhagen", "Grahlhof", "Grimmen", "Hagen", "Jarkvitz", "Kedingshagen", "Kirch", "Kordshagen", "Kramerhof", "Lüdershagen", "Mukran", "Neuendorf", "Parow", "Prohn", "Putgarten", "Ribnitz", "Sassnitz", "Schaabe", "Scharpitz", "Steinhagen", "Stralsund", "Woldenitz", "Wolthof", "Zarrendorf", "Zingst"}
+var alphabet = [30]string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "ä", "ö", "ü", "ß"}
 var httpClient = &http.Client{Timeout: 1000 * time.Second}
 
 // type definitions
@@ -56,7 +56,7 @@ type VvrCity struct {
 	Result          []VvrBusStop
 }
 
-// VvrData holds the VVR data, the OSM data and some meta data for one city
+// VvrData holds the VVR data and some meta data
 type VvrData struct {
 	CityResults []VvrCity
 }
@@ -264,7 +264,7 @@ func getCityResultFromData(cityName string, vvr VvrData) *VvrCity {
 	return nil
 }
 
-func doesOsmElementMatchVvrElement(osm OsmElement, vvrName string) bool {
+func doesOsmElementMatchVvrElement(osm OsmElement, vvrName string, cities []string) bool {
 	search := [...]string{"-", "/", ",", "ä", "ö", "ü", "ß"}
 	replace := [...]string{" ", " ", "", "ae", "oe", "ue", "ss"}
 	if len(search) != len(replace) {
@@ -370,12 +370,19 @@ func main() {
 	}
 
 	// get the VVR data
+	lenSearchWords := len(alphabet) * len(alphabet)
+	searchWords := make([]string, lenSearchWords)
+	for i := 0; i < len(alphabet); i++ {
+		for k := 0; k < len(alphabet); k++ {
+			searchWords[i*len(alphabet)+k] = alphabet[i] + alphabet[k]
+		}
+	}
 	var newVvr VvrData
-	for i := 0; i < len(cities); i++ {
+	for i := 0; i < len(searchWords); i++ {
 		var newVvrCity VvrCity
 		var newResult []VvrBusStop
 		isNewApiCallNeeded := false
-		oldVvrCity := getCityResultFromData(cities[i], oldVvr)
+		oldVvrCity := getCityResultFromData(searchWords[i], oldVvr)
 		if oldVvrCity != nil {
 			if *debug {
 				log.Printf("found old result for %s, checking for timestamp %s\n", oldVvrCity.SearchWord, oldVvrCity.ResultTimeStamp)
@@ -395,18 +402,18 @@ func main() {
 			isNewApiCallNeeded = true
 		}
 		if isNewApiCallNeeded {
-			getURL := vvrSearchURL + url.QueryEscape(cities[i])
+			getURL := vvrSearchURL + url.QueryEscape(searchWords[i])
 			err = getJson(getURL, &newResult)
 			if err != nil {
 				log.Println("error getting http json for", getURL)
 				log.Println("error is", err)
 				if oldVvrCity != nil {
-					log.Printf("reusing old cache data for %s due to the GET error\n", cities[i])
+					log.Printf("reusing old cache data for %s due to the GET error\n", searchWords[i])
 					newVvr.CityResults = append(newVvr.CityResults, *oldVvrCity)
 				}
 				continue
 			}
-			newVvrCity.SearchWord = cities[i]
+			newVvrCity.SearchWord = searchWords[i]
 			newVvrCity.ResultTimeStamp = time.Now()
 			newVvrCity.Result = newResult
 			newVvr.CityResults = append(newVvr.CityResults, newVvrCity)
@@ -418,6 +425,27 @@ func main() {
 	if err != nil {
 		log.Printf("error writing json with VVR data: %v\n", err)
 	}
+	// TODO get all city names from newVvr
+	var extractedCities []string
+	for i := 0; i < len(newVvr.CityResults); i++ {
+		for k := 0; k < len(newVvr.CityResults[i].Result); k++ {
+			bussi := newVvr.CityResults[i].Result[k].Value
+			if strings.Contains(bussi, ",") {
+				bussiCity := strings.Split(bussi, ",")[0]
+				isCityKnown := false
+				for n := 0; n < len(extractedCities); n++ {
+					if extractedCities[n] == bussiCity {
+						isCityKnown = true
+						break
+					}
+				}
+				if !isCityKnown {
+					extractedCities = append(extractedCities, bussiCity)
+				}
+			}
+		}
+	}
+	log.Println("extractedCities:", extractedCities, len(extractedCities))
 	// get OSM data
 	overpassQuery := overpassURL + overpassQueryPrefix + overpassSearchArea + overpassQuerySuffix
 	if *debug {
@@ -452,7 +480,6 @@ func main() {
 		if err != nil {
 			log.Printf("error writing json with VVR data: %v\n", err)
 		}
-
 	}
 
 	totalOsmElements := len(newOverpassData.Elements)
@@ -479,7 +506,7 @@ func main() {
 				oneMatch.City = newVvr.CityResults[i].SearchWord
 				var removeOsmElementsByID []int
 				for m := 0; m < len(newOverpassData.Elements); m++ {
-					if doesOsmElementMatchVvrElement(newOverpassData.Elements[m], oneMatch.Name) {
+					if doesOsmElementMatchVvrElement(newOverpassData.Elements[m], oneMatch.Name, extractedCities) {
 						oneMatch.Elements = append(oneMatch.Elements, newOverpassData.Elements[m])
 						removeOsmElementsByID = append(removeOsmElementsByID, newOverpassData.Elements[m].ID)
 					}
