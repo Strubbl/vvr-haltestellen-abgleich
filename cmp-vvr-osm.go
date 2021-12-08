@@ -276,6 +276,11 @@ func doesOsmElementMatchVvrElement(osm OsmElement, vvrName string, city string) 
 	if city+", "+osmName == vvrName {
 		return true
 	}
+	// remove comma from vvrName and try to match
+	vvrNameWithoutComma := strings.ReplaceAll(vvrName, ",", "")
+	if osmName == vvrNameWithoutComma {
+		return true
+	}
 	return false
 }
 
@@ -361,7 +366,6 @@ func main() {
 
 	// get the VVR data
 	var newVvr VvrData
-	vvrBusStopSum := 0
 	for i := 0; i < len(cities); i++ {
 		var newVvrCity VvrCity
 		var newResult []VvrBusStop
@@ -401,10 +405,8 @@ func main() {
 			newVvrCity.ResultTimeStamp = time.Now()
 			newVvrCity.Result = newResult
 			newVvr.CityResults = append(newVvr.CityResults, newVvrCity)
-			vvrBusStopSum += len(newVvrCity.Result)
 		} else {
 			newVvr.CityResults = append(newVvr.CityResults, *oldVvrCity)
-			vvrBusStopSum += len(oldVvrCity.Result)
 		}
 	}
 	err = writeNewJSON(newVvr)
@@ -422,7 +424,6 @@ func main() {
 		removeLockFile(lockFile)
 		panic(err)
 	}
-	// get the VVR data
 	var newOverpassData OverpassData
 	cacheTime := time.Now().Add(-1 * cacheTimeHours * time.Hour)
 	isWriteOverpassJson := false
@@ -462,26 +463,35 @@ func main() {
 			var oneMatch MatchedBusStop
 			oneMatch.Name = oneBusStop.Value
 			oneMatch.VvrID = oneBusStop.ID
-			oneMatch.City = newVvr.CityResults[i].SearchWord
-			var removeOsmElementsByID []int
-			for m := 0; m < len(newOverpassData.Elements); m++ {
-				if doesOsmElementMatchVvrElement(newOverpassData.Elements[m], oneMatch.Name, oneMatch.City) {
-					oneMatch.Elements = append(oneMatch.Elements, newOverpassData.Elements[m])
-					removeOsmElementsByID = append(removeOsmElementsByID, newOverpassData.Elements[m].ID)
+			// use VVR ID to remove duplicate VVR entities
+			vvrIsDuplicate := false
+			for p := 0; p < len(mbs); p++ {
+				if mbs[p].VvrID == oneMatch.VvrID {
+					vvrIsDuplicate = true
 				}
-				insaneLoops++
 			}
-			// remove the elements we already matched
-			for n := 0; n < len(removeOsmElementsByID); n++ {
-				toDeleteOsmId := removeOsmElementsByID[n]
-				for p := 0; p < len(newOverpassData.Elements); p++ {
-					if newOverpassData.Elements[p].ID == toDeleteOsmId {
-						newOverpassData.Elements = append(newOverpassData.Elements[:p], newOverpassData.Elements[p+1:]...)
-						continue
+			if !vvrIsDuplicate {
+				oneMatch.City = newVvr.CityResults[i].SearchWord
+				var removeOsmElementsByID []int
+				for m := 0; m < len(newOverpassData.Elements); m++ {
+					if doesOsmElementMatchVvrElement(newOverpassData.Elements[m], oneMatch.Name, oneMatch.City) {
+						oneMatch.Elements = append(oneMatch.Elements, newOverpassData.Elements[m])
+						removeOsmElementsByID = append(removeOsmElementsByID, newOverpassData.Elements[m].ID)
+					}
+					insaneLoops++
+				}
+				// remove the elements we already matched
+				for n := 0; n < len(removeOsmElementsByID); n++ {
+					toDeleteOsmId := removeOsmElementsByID[n]
+					for p := 0; p < len(newOverpassData.Elements); p++ {
+						if newOverpassData.Elements[p].ID == toDeleteOsmId {
+							newOverpassData.Elements = append(newOverpassData.Elements[:p], newOverpassData.Elements[p+1:]...)
+							continue
+						}
 					}
 				}
+				mbs = append(mbs, oneMatch)
 			}
-			mbs = append(mbs, oneMatch)
 		}
 	}
 	remainingOsmElements := len(newOverpassData.Elements)
@@ -503,6 +513,7 @@ func main() {
 		}
 	}
 
+	vvrBusStopSum := 0
 	remainingVvrStops := 0
 	result := make([]MatchResult, len(mbs))
 	for i := 0; i < len(mbs); i++ {
@@ -514,6 +525,7 @@ func main() {
 		result[i].IsInVVR = false
 		if mbs[i].VvrID != "" {
 			result[i].IsInVVR = true
+			vvrBusStopSum++
 		}
 		result[i].NrPlatforms = 0
 		result[i].NrStopPositions = 0
@@ -533,7 +545,7 @@ func main() {
 				result[i].NrPlatforms++
 			}
 		}
-		if len(mbs[i].Elements) == 0 {
+		if result[i].IsInVVR && len(mbs[i].Elements) == 0 {
 			remainingVvrStops++
 		}
 	}
