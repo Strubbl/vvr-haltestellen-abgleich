@@ -53,9 +53,26 @@ type VvrData struct {
 	CityResults []VvrCity
 }
 
-type OsmTag struct {
-	OsmKey   string
-	OsmValue string
+type OsmElement struct {
+	Type string  `json:"type"`
+	ID   int     `json:"id"`
+	Lat  float64 `json:"lat"`
+	Lon  float64 `json:"lon"`
+	Tags struct {
+		Bench            string `json:"bench"`
+		Bin              string `json:"bin"`
+		Bus              string `json:"bus"`
+		CheckDateShelter string `json:"check_date:shelter"`
+		DeparturesBoard  string `json:"departures_board"`
+		Highway          string `json:"highway"`
+		Lit              string `json:"lit"`
+		Name             string `json:"name"`
+		Operator         string `json:"operator"`
+		PublicTransport  string `json:"public_transport"`
+		Shelter          string `json:"shelter"`
+		TactilePaving    string `json:"tactile_paving"`
+		Wheelchair       string `json:"wheelchair"`
+	} `json:"tags,omitempty"`
 }
 
 // OverpassData holds the OSM data queried via overpass api
@@ -67,27 +84,20 @@ type OverpassData struct {
 		TimestampAreasBase time.Time `json:"timestamp_areas_base"`
 		Copyright          string    `json:"copyright"`
 	} `json:"osm3s"`
-	Elements []struct {
-		Type string  `json:"type"`
-		ID   int     `json:"id"`
-		Lat  float64 `json:"lat"`
-		Lon  float64 `json:"lon"`
-		Tags struct {
-			Bench            string `json:"bench"`
-			Bin              string `json:"bin"`
-			Bus              string `json:"bus"`
-			CheckDateShelter string `json:"check_date:shelter"`
-			DeparturesBoard  string `json:"departures_board"`
-			Highway          string `json:"highway"`
-			Lit              string `json:"lit"`
-			Name             string `json:"name"`
-			Operator         string `json:"operator"`
-			PublicTransport  string `json:"public_transport"`
-			Shelter          string `json:"shelter"`
-			TactilePaving    string `json:"tactile_paving"`
-			Wheelchair       string `json:"wheelchair"`
-		} `json:"tags,omitempty"`
-	} `json:"elements"`
+	Elements []OsmElement `json:"elements"`
+}
+
+// MatchedBusStops is a result of the merge of VVR data with OSM data
+type MatchedBusStop struct {
+	Name     string
+	VvrID    string
+	City     string
+	Elements []OsmElement
+}
+
+type MatchResult struct {
+	Name  string
+	VvrID string
 }
 
 // functions
@@ -226,6 +236,11 @@ func getOverpassQueryURL() string {
 	return overpassURL + overpassQueryPrefix + citiesPiped + overpassQuerySuffix
 }
 
+func doesOsmElementMatchVvrElement(osm OsmElement, name string, city string) bool {
+	// TODO use city to find more false negatives
+	return osm.Tags.Name == name
+}
+
 func main() {
 	start := time.Now()
 	defer printElapsedTime(start)
@@ -340,4 +355,35 @@ func main() {
 	log.Println("TimestampAreasBase:", oldOverpassData.Osm3S.TimestampAreasBase)
 	log.Println("TimestampOsmBase:", oldOverpassData.Osm3S.TimestampOsmBase)
 	// TOOD get fresh data from overpass
+
+	// compare
+	var mbs []MatchedBusStop
+	// at first load all bus stops into
+	insaneLoops := 0
+	for i := 0; i < len(newVvr.CityResults); i++ {
+		for k := 0; k < len(newVvr.CityResults[i].Result); k++ {
+			oneBusStop := newVvr.CityResults[i].Result[k]
+			var oneMatch MatchedBusStop
+			oneMatch.Name = oneBusStop.Value
+			oneMatch.VvrID = oneBusStop.ID
+			oneMatch.City = newVvr.CityResults[i].SearchWord
+			for m := 0; m < len(oldOverpassData.Elements); m++ {
+				if doesOsmElementMatchVvrElement(oldOverpassData.Elements[m], oneMatch.Name, oneMatch.City) {
+					oneMatch.Elements = append(oneMatch.Elements, oldOverpassData.Elements[m])
+				} else {
+					var notInVvrButInOsm MatchedBusStop
+					notInVvrButInOsm.City = newVvr.CityResults[i].SearchWord
+					notInVvrButInOsm.Name = oldOverpassData.Elements[m].Tags.Name
+					notInVvrButInOsm.Elements = append(notInVvrButInOsm.Elements, oldOverpassData.Elements[m])
+					mbs = append(mbs, notInVvrButInOsm)
+				}
+				insaneLoops++
+			}
+			mbs = append(mbs, oneMatch)
+		}
+	}
+	if *debug {
+		log.Println("insane looping finished:", insaneLoops)
+	}
+
 }
