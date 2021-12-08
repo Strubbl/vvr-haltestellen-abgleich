@@ -48,8 +48,8 @@ OSM Objekte mit VVR verknüpft: {{ .Stats.OsmStopsMatchingVvr }}</p>
       <td>{{ .ID }}</td>
       <td>{{ .VvrID }}</td>
       <td>{{ .Name }}</td>
-      <td>{{ .IsInVVR }}</td>
-      <td>{{ .IsInOSM }}</td>
+      <td class="{{if .IsInVVR}}table-success{{else}}table-danger{{end}}">{{ .IsInVVR }}</td>
+      <td class="{{if .IsInOSM}}table-success{{else}}table-danger{{end}}">{{ .IsInOSM }}</td>
       <td>{{ .NrBusStops }}</td>
       <td>{{ .NrPlatforms }}</td>
       <td>{{ .NrStopPositions }}</td>
