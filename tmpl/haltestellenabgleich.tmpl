@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang=en>
+<head>
+<meta charset=utf-8>
+<title>{{ .Title }}</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+<link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.19.1/dist/bootstrap-table.min.css">
+<style type="text/css" media="screen">
+table.dataTable thead .sorting:after,
+table.dataTable thead .sorting:before,
+table.dataTable thead .sorting_asc:after,
+table.dataTable thead .sorting_asc:before,
+table.dataTable thead .sorting_asc_disabled:after,
+table.dataTable thead .sorting_asc_disabled:before,
+table.dataTable thead .sorting_desc:after,
+table.dataTable thead .sorting_desc:before,
+table.dataTable thead .sorting_desc_disabled:after,
+table.dataTable thead .sorting_desc_disabled:before {
+bottom: .5em;
+}
+</style>
+</head>
+<body>
+<h1>{{ .Title }}</h1>
+  <table id="resultTable" class="table table-striped table-bordered table-hover table-sm sortable" style="width: auto;">
+  <thead>
+    <tr>
+      <th scope="col" data-type="number">ID</th>
+      <th scope="col" data-type="string">Name</th>
+      <th scope="col" data-type="string">IsInVVR</th>
+      <th scope="col" data-type="string">IsInOSM</th>
+      <th scope="col" data-type="number">NrPlatforms</th>
+      <th scope="col" data-type="number">NrStopPositions</th>
+      <th scope="col" data-type="string">OsmReference</th>
+    </tr>
+    </thead>
+     <tbody>
+    {{range .Rows}}<tr>
+      <td>{{ .ID }}</td>
+      <td>{{ .Name }}</td>
+      <td>{{ .IsInVVR }}</td>
+      <td>{{ .IsInOSM }}</td>
+      <td>{{ .NrPlatforms }}</td>
+      <td>{{ .NrStopPositions }}</td>
+      <td>{{ .OsmReference }}</td>
+    </tr>
+    {{else}}<tr><td colspan="7"><strong>no data</strong></td></tr>{{end}}
+    </tbody>
+    <tfoot>
+    <tr>
+      <th scope="col">ID</th>
+      <th scope="col">Name</th>
+      <th scope="col">IsInVVR</th>
+      <th scope="col">IsInOSM</th>
+      <th scope="col">NrPlatforms</th>
+      <th scope="col">NrStopPositions</th>
+      <th scope="col">OsmReference</th>
+    </tr>
+    </tfoot>
+  </table>
+  <p>generated at {{ .GenDate }}</p>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+<script src="https://kryogenix.org/code/browser/sorttable/sorttable.js"></script>
+</body>
+</html>

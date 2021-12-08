@@ -8,15 +8,20 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
+	"text/template"
 	"time"
 )
 
 const cacheDir = "cache"
 const cacheTimeHours = 23
 const lockFile = ".lock"
+const outputDir = "output"
 const overpassDataFile = "overpass.json"
+const templateName = "haltestellenabgleich"
+const tmplDirectory = "tmpl"
 const vvrDataFile = "vvr.json"
 const vvrSearchURL = "https://vvr.verbindungssuche.de/fpl/suhast.php?&query="
 
@@ -25,6 +30,8 @@ const overpassSearchArea = "Stralsund"
 const overpassURL = "http://overpass-api.de/api/interpreter?data="
 const overpassQueryPrefix = "[out:json][timeout:600];area[boundary=administrative][admin_level=8][name~'("
 const overpassQuerySuffix = ")']->.searchArea;(nw[\"highway\"=\"bus_stop\"](area.searchArea);node[\"public_transport\"=\"stop_position\"](area.searchArea););out;"
+
+//const overpassQuerySuffix = ")']->.searchArea;(nw[\"highway\"=\"bus_stop\"](area.searchArea);node[\"public_transport\"=\"stop_position\"](area.searchArea););out%20center;"
 
 // flags
 var debug = flag.Bool("d", false, "get debug output (implies verbose mode)")
@@ -104,6 +111,12 @@ type MatchResult struct {
 	NrPlatforms     int
 	NrStopPositions int
 	OsmReference    string
+}
+
+type TemplateData struct {
+	Rows    []MatchResult
+	GenDate time.Time
+	Title   string
 }
 
 // functions
@@ -236,6 +249,29 @@ func doesOsmElementMatchVvrElement(osm OsmElement, name string, city string) boo
 	return osm.Tags.Name == name
 }
 
+func writeTemplateToHTML(rows []MatchResult) {
+	var templateData TemplateData
+	templateData.Rows = rows
+	templateData.GenDate = time.Now()
+	templateData.Title = "VVR-OSM Haltestellenabgleich"
+	f, err := os.Create(outputDir + string(os.PathSeparator) + templateName + ".html")
+	if err != nil {
+		log.Println("writeTemplateToHTML", err)
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			log.Println("writeTemplateToHTML", err)
+		}
+	}()
+
+	htmlSource, err := template.New(templateName + ".tmpl").ParseFiles(tmplDirectory + "/" + templateName + ".tmpl")
+	if err != nil {
+		log.Println("writeTemplateToHTML", err)
+	}
+	htmlSource.Execute(f, templateData)
+}
+
+// main
 func main() {
 	start := time.Now()
 	defer printElapsedTime(start)
@@ -313,7 +349,7 @@ func main() {
 			isNewApiCallNeeded = true
 		}
 		if isNewApiCallNeeded {
-			getURL := vvrSearchURL + cities[i]
+			getURL := vvrSearchURL + url.QueryEscape(cities[i])
 			err = getJson(getURL, &newResult)
 			if err != nil {
 				log.Println("error getting http json for", getURL)
@@ -380,7 +416,7 @@ func main() {
 
 	result := make([]MatchResult, len(mbs))
 	for i := 0; i < len(mbs); i++ {
-		result[i].ID = i
+		result[i].ID = i + 1
 		result[i].IsInOSM = false
 		if len(mbs[i].Elements) > 0 {
 			result[i].IsInOSM = true
@@ -393,7 +429,7 @@ func main() {
 		result[i].NrStopPositions = 0
 		result[i].Name = mbs[i].Name
 		result[i].OsmReference = ""
-
-		log.Println(result[i])
 	}
+
+	writeTemplateToHTML(result)
 }
