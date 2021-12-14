@@ -266,8 +266,8 @@ func getCityResultFromData(cityName string, vvr VvrData) *VvrCity {
 }
 
 func doesOsmElementMatchVvrElement(osm OsmElement, vvrName string, cities []string) bool {
-	search := [...]string{"-", "/", ",", "ä", "ö", "ü", "ß", "(", ")", "."}
-	replace := [...]string{" ", " ", "", "ae", "oe", "ue", "ss", "", "", ""}
+	search := [...]string{"-", "/", ",", "ä", "ö", "ü", "ß", "(", ")", ".", "hosanweg"}
+	replace := [...]string{" ", " ", "", "ae", "oe", "ue", "ss", "", "", "", "hosangweg"}
 	if len(search) != len(replace) {
 		log.Panicln("search and replace arrays do not have the same length")
 	}
