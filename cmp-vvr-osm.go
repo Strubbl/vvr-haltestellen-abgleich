@@ -33,6 +33,22 @@ const overpassURL = "http://overpass-api.de/api/interpreter?data="
 const overpassQueryPrefix = "[out:json][timeout:600];area[boundary=administrative][admin_level=6][name~'("
 const overpassQuerySuffix = ")']->.searchArea;(nw[\"public_transport\"=\"platform\"][\"bus\"](area.searchArea);node[\"public_transport\"=\"stop_position\"][\"bus\"](area.searchArea);node[\"highway\"=\"bus_stop\"](area.searchArea););out;"
 
+// tags
+const tag_network = "Verkehrsgesellschaft Vorpommern-Rügen"
+const tag_network_guid = "DE-MV-VVR"
+const tag_network_short = "VVR"
+const tag_operator = "Verkehrsgesellschaft Vorpommern-Rügen"
+
+// warnings
+const warning_network_tag_missing = "network tag is missing"
+const warning_network_guid_tag_missing = "network:guid tag is missing"
+const warning_network_short_tag_missing = "network:short tag is missing"
+const warning_operator_tag_missing = "network operator is missing"
+const warning_network_tag_not_correct = "network tag is not correct"
+const warning_network_guid_tag_not_correct = "network:guid tag is not correct"
+const warning_network_short_tag_not_correct = "network:short tag is not correct"
+const warning_operator_tag_not_correct = "network operator is not correct"
+
 // flags
 var debug = flag.Bool("d", false, "get debug output (implies verbose mode)")
 var verbose = flag.Bool("verbose", false, "verbose mode")
@@ -75,6 +91,9 @@ type OsmElement struct {
 		Highway          string `json:"highway"`
 		Lit              string `json:"lit"`
 		Name             string `json:"name"`
+		Network          string `json:"network"`
+		NetworkGuid      string `json:"network:guid"`
+		NetworkShort     string `json:"network:short"`
 		Operator         string `json:"operator"`
 		PublicTransport  string `json:"public_transport"`
 		Shelter          string `json:"shelter"`
@@ -570,7 +589,30 @@ func main() {
 		for k := 0; k < len(mbs[i].Elements); k++ {
 			object := mbs[i].Elements[k]
 			objectURL := "http://osm.org/" + object.Type + "/" + strconv.FormatInt(object.ID, 10)
-			result[i].OsmReference = result[i].OsmReference + "<a href=\"" + objectURL + "\">" + object.Type + " " + strconv.FormatInt(object.ID, 10) + "</a><br />"
+			// OSM Reference column filling Start
+			result[i].OsmReference = result[i].OsmReference + "<p><a href=\"" + objectURL + "\">" + object.Type + " " + strconv.FormatInt(object.ID, 10) + "</a>"
+			if object.Tags.Network == "" {
+				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_tag_missing
+			} else if object.Tags.Network != tag_network {
+				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_tag_not_correct + ". " + object.Tags.Network + " instead of " + tag_network
+			}
+			if object.Tags.NetworkGuid == "" {
+				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_guid_tag_missing
+			} else if object.Tags.NetworkGuid != tag_network_guid {
+				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_guid_tag_not_correct + ". " + object.Tags.NetworkGuid + " instead of " + tag_network_guid
+			}
+			if object.Tags.NetworkShort == "" {
+				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_short_tag_missing
+			} else if object.Tags.NetworkShort != tag_network_short {
+				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_short_tag_not_correct + ". " + object.Tags.NetworkShort + " instead of " + tag_network_short
+			}
+			if object.Tags.Operator == "" {
+				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_operator_tag_missing
+			} else if object.Tags.Operator != tag_operator {
+				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_operator_tag_not_correct + ". " + object.Tags.Operator + " instead of " + tag_operator
+			}
+			result[i].OsmReference = result[i].OsmReference + "</p>"
+			// OSM Reference column filling End
 			if object.Tags.Highway == "bus_stop" {
 				result[i].NrBusStops++
 			}
