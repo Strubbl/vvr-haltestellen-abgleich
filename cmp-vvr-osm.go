@@ -142,6 +142,7 @@ type Statistics struct {
 	RemainingOsmStops     int
 	OsmStopsMatchingVvr   int
 	VvrStopsWithOsmObject int
+	WarningsSum           int
 }
 
 type TemplateData struct {
@@ -597,24 +598,32 @@ func main() {
 			if object.Tags.PublicTransport != "stop_position" {
 				if object.Tags.Network == "" {
 					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_tag_missing
+					warningsSum++
 				} else if object.Tags.Network != tag_network {
 					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_tag_not_correct + ". " + object.Tags.Network + " instead of network=" + tag_network
+					warningsSum++
 				}
 				if object.Tags.NetworkGuid == "" {
 					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_guid_tag_missing
+					warningsSum++
 				} else if object.Tags.NetworkGuid != tag_network_guid {
 					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_guid_tag_not_correct + ". " + object.Tags.NetworkGuid + " instead of network:guid=" + tag_network_guid
+					warningsSum++
 				}
 				if object.Tags.NetworkShort == "" {
 					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_short_tag_missing
+					warningsSum++
 				} else if object.Tags.NetworkShort != tag_network_short {
 					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_short_tag_not_correct + ". " + object.Tags.NetworkShort + " instead of network:short" + tag_network_short
+					warningsSum++
 				}
 			}
 			if object.Tags.Operator == "" {
 				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_operator_tag_missing
+				warningsSum++
 			} else if object.Tags.Operator != tag_operator {
 				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_operator_tag_not_correct + ". " + object.Tags.Operator + " instead of operator=" + tag_operator
+				warningsSum++
 			}
 			result[i].OsmReference = result[i].OsmReference + "</p>"
 			// OSM Reference column filling End
@@ -647,5 +656,6 @@ func main() {
 	templateData.Stats.RemainingOsmStops = remainingOsmElements
 	templateData.Stats.OsmStopsMatchingVvr = totalOsmElements - remainingOsmElements
 	templateData.Stats.VvrStopsWithOsmObject = vvrBusStopSum - remainingVvrStops
+	templateData.Stats.WarningsSum = warningsSum
 	writeTemplateToHTML(templateData)
 }
