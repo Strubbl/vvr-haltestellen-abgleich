@@ -588,23 +588,27 @@ func main() {
 		result[i].OsmReference = ""
 		for k := 0; k < len(mbs[i].Elements); k++ {
 			object := mbs[i].Elements[k]
-			objectURL := "http://osm.org/" + object.Type + "/" + strconv.FormatInt(object.ID, 10)
+			object_id := strconv.FormatInt(object.ID, 10)
+			objectURL := "http://osm.org/" + object.Type + "/" + object_id
 			// OSM Reference column filling Start
-			result[i].OsmReference = result[i].OsmReference + "<p><a href=\"" + objectURL + "\">" + object.Type + " " + strconv.FormatInt(object.ID, 10) + "</a>"
-			if object.Tags.Network == "" {
-				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_tag_missing
-			} else if object.Tags.Network != tag_network {
-				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_tag_not_correct + ". " + object.Tags.Network + " instead of " + tag_network
-			}
-			if object.Tags.NetworkGuid == "" {
-				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_guid_tag_missing
-			} else if object.Tags.NetworkGuid != tag_network_guid {
-				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_guid_tag_not_correct + ". " + object.Tags.NetworkGuid + " instead of " + tag_network_guid
-			}
-			if object.Tags.NetworkShort == "" {
-				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_short_tag_missing
-			} else if object.Tags.NetworkShort != tag_network_short {
-				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_short_tag_not_correct + ". " + object.Tags.NetworkShort + " instead of " + tag_network_short
+			josm_link := "<a href=\"http://127.0.0.1:8111/load_object?new_layer=false&objects=" + string(object.Type[0]) + object_id + "\" target=\"hiddenIframe\" title=\"edit in JOSM\">(j)</a>"
+			result[i].OsmReference = result[i].OsmReference + "<p><a href=\"" + objectURL + "\">" + object.Type + " " + object_id + "</a> " + josm_link
+			if object.Tags.PublicTransport != "stop_position" {
+				if object.Tags.Network == "" {
+					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_tag_missing
+				} else if object.Tags.Network != tag_network {
+					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_tag_not_correct + ". " + object.Tags.Network + " instead of " + tag_network
+				}
+				if object.Tags.NetworkGuid == "" {
+					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_guid_tag_missing
+				} else if object.Tags.NetworkGuid != tag_network_guid {
+					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_guid_tag_not_correct + ". " + object.Tags.NetworkGuid + " instead of " + tag_network_guid
+				}
+				if object.Tags.NetworkShort == "" {
+					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_short_tag_missing
+				} else if object.Tags.NetworkShort != tag_network_short {
+					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_short_tag_not_correct + ". " + object.Tags.NetworkShort + " instead of " + tag_network_short
+				}
 			}
 			if object.Tags.Operator == "" {
 				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_operator_tag_missing
