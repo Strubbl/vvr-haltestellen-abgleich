@@ -569,6 +569,7 @@ func main() {
 	vvrBusStopSum := 0
 	remainingVvrStops := 0
 	osmStopsNoName := 0
+	warningsSum := 0
 	result := make([]MatchResult, len(mbs))
 	for i := 0; i < len(mbs); i++ {
 		result[i].ID = i + 1
@@ -597,23 +598,23 @@ func main() {
 				if object.Tags.Network == "" {
 					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_tag_missing
 				} else if object.Tags.Network != tag_network {
-					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_tag_not_correct + ". " + object.Tags.Network + " instead of " + tag_network
+					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_tag_not_correct + ". " + object.Tags.Network + " instead of network=" + tag_network
 				}
 				if object.Tags.NetworkGuid == "" {
 					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_guid_tag_missing
 				} else if object.Tags.NetworkGuid != tag_network_guid {
-					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_guid_tag_not_correct + ". " + object.Tags.NetworkGuid + " instead of " + tag_network_guid
+					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_guid_tag_not_correct + ". " + object.Tags.NetworkGuid + " instead of network:guid=" + tag_network_guid
 				}
 				if object.Tags.NetworkShort == "" {
 					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_short_tag_missing
 				} else if object.Tags.NetworkShort != tag_network_short {
-					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_short_tag_not_correct + ". " + object.Tags.NetworkShort + " instead of " + tag_network_short
+					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_short_tag_not_correct + ". " + object.Tags.NetworkShort + " instead of network:short" + tag_network_short
 				}
 			}
 			if object.Tags.Operator == "" {
 				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_operator_tag_missing
 			} else if object.Tags.Operator != tag_operator {
-				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_operator_tag_not_correct + ". " + object.Tags.Operator + " instead of " + tag_operator
+				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_operator_tag_not_correct + ". " + object.Tags.Operator + " instead of operator=" + tag_operator
 			}
 			result[i].OsmReference = result[i].OsmReference + "</p>"
 			// OSM Reference column filling End
