@@ -43,11 +43,11 @@ const tag_operator = "Verkehrsgesellschaft Vorpommern-Rügen"
 const warning_network_tag_missing = "network tag is missing"
 const warning_network_guid_tag_missing = "network:guid tag is missing"
 const warning_network_short_tag_missing = "network:short tag is missing"
-const warning_operator_tag_missing = "network operator is missing"
+const warning_operator_tag_missing = "operator is missing"
 const warning_network_tag_not_correct = "network tag is not correct"
 const warning_network_guid_tag_not_correct = "network:guid tag is not correct"
 const warning_network_short_tag_not_correct = "network:short tag is not correct"
-const warning_operator_tag_not_correct = "network operator is not correct"
+const warning_operator_tag_not_correct = "operator is not correct"
 
 // flags
 var debug = flag.Bool("d", false, "get debug output (implies verbose mode)")
