@@ -595,7 +595,7 @@ func main() {
 			// OSM Reference column filling Start
 			josm_link := "<a href=\"http://127.0.0.1:8111/load_object?new_layer=false&objects=" + string(object.Type[0]) + object_id + "\" target=\"hiddenIframe\" title=\"edit in JOSM\">(j)</a>"
 			result[i].OsmReference = result[i].OsmReference + "<p><a href=\"" + objectURL + "\">" + object.Type + " " + object_id + "</a> " + josm_link
-			if object.Tags.PublicTransport != "stop_position" {
+			if object.Tags.PublicTransport != "stop_position" || object.Tags.Highway == "bus_stop" {
 				if object.Tags.Network == "" {
 					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_tag_missing
 					warningsSum++
