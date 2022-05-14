@@ -162,7 +162,7 @@ type TemplateData struct {
 
 // functions
 func removeLockFile(lf string) {
-	if *debug {
+	if *verbose {
 		log.Printf("removeLockFile: trying to delete %s\n", lf)
 	}
 	err := os.Remove(lf)
@@ -279,7 +279,7 @@ func getJson(url string, target interface{}) error {
 }
 
 func printElapsedTime(start time.Time) {
-	if *debug {
+	if *verbose {
 		log.Printf("printElapsedTime: time elapsed %.2fs\n", time.Since(start).Seconds())
 	}
 }
@@ -373,7 +373,7 @@ func main() {
 
 	// check if lock file exists and exit, so we do not run this process two times
 	if _, err := os.Stat(lockFile); os.IsNotExist(err) {
-		if *debug {
+		if *verbose {
 			log.Printf("no lockfile %s present\n", lockFile)
 		}
 	} else {
@@ -478,7 +478,7 @@ func main() {
 	}
 	// get OSM data
 	overpassQuery := overpassURL + overpassQueryPrefix + overpassSearchArea + overpassQuerySuffix
-	if *debug {
+	if *verbose {
 		log.Println("overpassQuery:", overpassQuery)
 	}
 	var oldOverpassData OverpassData
@@ -500,7 +500,7 @@ func main() {
 		}
 		isWriteOverpassJson = true
 	} else {
-		if *debug {
+		if *verbose {
 			log.Println("reusing old overpass data from cache, data is not older than hours:", cacheTimeOverpassInHours)
 		}
 		newOverpassData = oldOverpassData
