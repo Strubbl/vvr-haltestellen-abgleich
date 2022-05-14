@@ -31,7 +31,7 @@ const vvrSearchURL = "https://vvr.verbindungssuche.de/fpl/suhast.php?&query="
 const overpassSearchArea = "Vorpommern-Rügen"
 const overpassURL = "http://overpass-api.de/api/interpreter?data="
 const overpassQueryPrefix = "[out:json][timeout:600];area[boundary=administrative][admin_level=6][name~'("
-const overpassQuerySuffix = ")']->.searchArea;(nw[\"public_transport\"=\"platform\"][\"bus\"](area.searchArea);node[\"public_transport\"=\"stop_position\"][\"bus\"](area.searchArea);node[\"highway\"=\"bus_stop\"](area.searchArea););out;"
+const overpassQuerySuffix = ")']->.searchArea;(nw[\"public_transport\"=\"platform\"][\"bus\"](area.searchArea);node[\"public_transport\"=\"stop_position\"][\"bus\"](area.searchArea);node[\"highway\"=\"bus_stop\"](area.searchArea);rel[\"type\"=\"public_transport\"](area.searchArea););out;"
 
 // tags
 const tag_network = "Verkehrsgesellschaft Vorpommern-Rügen"
@@ -595,7 +595,7 @@ func main() {
 			// OSM Reference column filling Start
 			josm_link := "<a href=\"http://127.0.0.1:8111/load_object?new_layer=false&objects=" + string(object.Type[0]) + object_id + "\" target=\"hiddenIframe\" title=\"edit in JOSM\">(j)</a>"
 			result[i].OsmReference = result[i].OsmReference + "<p><a href=\"" + objectURL + "\">" + object.Type + " " + object_id + "</a> " + josm_link
-			if object.Tags.PublicTransport != "stop_position" || object.Tags.Highway == "bus_stop" {
+			if object.Type != "relation" && (object.Tags.PublicTransport != "stop_position" || object.Tags.Highway == "bus_stop") {
 				if object.Tags.Network == "" {
 					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_tag_missing
 					warningsSum++
