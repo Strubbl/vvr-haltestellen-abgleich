@@ -29,7 +29,8 @@ OSM Objekte: {{ .Stats.OsmStops }}<br />
 OSM Objekte nicht mit VVR verknüpft: {{ .Stats.RemainingOsmStops }}<br />
 OSM Objekte mit VVR verknüpft: {{ .Stats.OsmStopsMatchingVvr }}<br />
 OSM Objekte ohne Name: {{ .Stats.OsmStopsNoName }}<br />
-Warnungen an OSM Objekten: {{ .Stats.WarningsSum }}</p>
+Warnungen an OSM Objekten: {{ .Stats.WarningsSum }}<br />
+Ignorierte OSM Objekte wegen anderem Betreiber: {{ .IgnoredBusStops }}</p>
 
   <table id="resultTable" class="table table-striped table-bordered table-hover table-sm sortable" style="width: auto;">
   <thead>

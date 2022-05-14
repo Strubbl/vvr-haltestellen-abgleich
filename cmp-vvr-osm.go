@@ -39,6 +39,9 @@ const tag_network_guid = "DE-MV-VVR"
 const tag_network_short = "VVR"
 const tag_operator = "Verkehrsgesellschaft Vorpommern-Rügen"
 
+//const uns_luett_bahn_tag_network = "Uns lütt Bahn"
+//const uns_luett_bahn_tag_operator = "Rügen-Bahnen"
+
 // warnings
 const warning_network_tag_missing = "network tag is missing"
 const warning_network_guid_tag_missing = "network:guid tag is missing"
@@ -55,6 +58,10 @@ var verbose = flag.Bool("verbose", false, "verbose mode")
 
 // non-const consts
 var alphabet = [30]string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "ä", "ö", "ü", "ß"}
+var ignoreBusStopsWithOperators = map[string]int{
+	"Darßbahn":     0,
+	"Rügen-Bahnen": 0,
+}
 var httpClient = &http.Client{Timeout: 1000 * time.Second}
 
 // type definitions
@@ -146,10 +153,11 @@ type Statistics struct {
 }
 
 type TemplateData struct {
-	Rows    []MatchResult
-	GenDate time.Time
-	Title   string
-	Stats   Statistics
+	Rows            []MatchResult
+	GenDate         time.Time
+	IgnoredBusStops string
+	Title           string
+	Stats           Statistics
 }
 
 // functions
@@ -592,6 +600,17 @@ func main() {
 			object := mbs[i].Elements[k]
 			object_id := strconv.FormatInt(object.ID, 10)
 			objectURL := "http://osm.org/" + object.Type + "/" + object_id
+			// ignore certain bus stops having a known operator
+			value, exists := ignoreBusStopsWithOperators[object.Tags.Operator]
+			if exists {
+				value++
+				ignoreBusStopsWithOperators[object.Tags.Operator] = value
+				if *debug {
+					log.Println("operator", object.Tags.Operator, "shall be ignored for object", objectURL)
+				}
+				// skip further processing for this bus stop
+				continue
+			}
 			// OSM Reference column filling Start
 			josm_link := "<a href=\"http://127.0.0.1:8111/load_object?new_layer=false&objects=" + string(object.Type[0]) + object_id + "\" target=\"hiddenIframe\" title=\"edit in JOSM\">(j)</a>"
 			result[i].OsmReference = result[i].OsmReference + "<p><a href=\"" + objectURL + "\">" + object.Type + " " + object_id + "</a> " + josm_link
@@ -648,6 +667,7 @@ func main() {
 	var templateData TemplateData
 	templateData.Rows = result
 	templateData.GenDate = time.Now()
+	templateData.IgnoredBusStops = fmt.Sprint(ignoreBusStopsWithOperators)
 	templateData.Title = "VVR-OSM Haltestellenabgleich"
 	templateData.Stats.VvrStops = vvrBusStopSum
 	templateData.Stats.OsmStops = totalOsmElements
