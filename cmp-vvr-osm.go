@@ -47,6 +47,7 @@ const warning_network_tag_missing = "network tag is missing"
 const warning_network_guid_tag_missing = "network:guid tag is missing"
 const warning_network_short_tag_missing = "network:short tag is missing"
 const warning_operator_tag_missing = "operator is missing"
+const warning_operator_might_be_vvr = ", might be operator=" + tag_operator
 const warning_network_tag_not_correct = "network tag is not correct"
 const warning_network_guid_tag_not_correct = "network:guid tag is not correct"
 const warning_network_short_tag_not_correct = "network:short tag is not correct"
@@ -639,7 +640,11 @@ func main() {
 				}
 			}
 			if object.Tags.Operator == "" {
-				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_operator_tag_missing
+				operatorMightBeVVR := ""
+				if result[i].IsInVVR {
+					operatorMightBeVVR = warning_operator_might_be_vvr
+				}
+				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_operator_tag_missing + " " + operatorMightBeVVR
 				warningsSum++
 			} else if object.Tags.Operator != tag_operator {
 				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_operator_tag_not_correct + ". " + object.Tags.Operator + " instead of operator=" + tag_operator
