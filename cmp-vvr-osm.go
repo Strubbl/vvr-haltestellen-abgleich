@@ -59,8 +59,9 @@ var verbose = flag.Bool("verbose", false, "verbose mode")
 // non-const consts
 var alphabet = [30]string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "ä", "ö", "ü", "ß"}
 var ignoreBusStopsWithOperators = map[string]int{
-	"Darßbahn":     0,
-	"Rügen-Bahnen": 0,
+	"Darßbahn":        0,
+	"Rügen-Bahnen":    0,
+	"Kap-Arkona-Bahn": 0,
 }
 var httpClient = &http.Client{Timeout: 1000 * time.Second}
 
