@@ -60,9 +60,12 @@ var verbose = flag.Bool("verbose", false, "verbose mode")
 // non-const consts
 var alphabet = [30]string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "ä", "ö", "ü", "ß"}
 var ignoreBusStopsWithOperators = map[string]int{
-	"Darßbahn":        0,
-	"Rügen-Bahnen":    0,
-	"Kap-Arkona-Bahn": 0,
+	"Darßbahn":                 0,
+	"Rügen-Bahnen":             0,
+	"Kap-Arkona-Bahn":          0,
+	"Busunternehmen M. Scholz": 0,
+	"Deutsche Bahn":            0,
+	"Flixbus":                  0,
 }
 var httpClient = &http.Client{Timeout: 1000 * time.Second}
 
@@ -296,8 +299,8 @@ func getCityResultFromData(cityName string, vvr VvrData) *VvrCity {
 }
 
 func doesOsmElementMatchVvrElement(osm OsmElement, vvrName string, cities []string) bool {
-	search := [...]string{"-", "/", ",", "ä", "ö", "ü", "ß", "(", ")", ".", "hosanweg"}
-	replace := [...]string{" ", " ", "", "ae", "oe", "ue", "ss", "", "", "", "hosangweg"}
+	search := [...]string{"-", "/", ",", "ä", "ö", "ü", "ß", "(", ")", ".", "strasse"}
+	replace := [...]string{" ", " ", "", "ae", "oe", "ue", "ss", "", "", "", "str"}
 	if len(search) != len(replace) {
 		log.Panicln("search and replace arrays do not have the same length")
 	}
