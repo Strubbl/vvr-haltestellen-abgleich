@@ -4,9 +4,12 @@ import "time"
 
 // VvrBusStop represents all info from VVR belonging to one bus stop
 type VvrBusStop struct {
-	ID    string `json:"id"`
-	Value string `json:"value"`
-	Label string `json:"label"`
+	Cla    string `json:"cla"`
+	ID     string `json:"id"`
+	Label  string `json:"label"`
+	Linien string `json:"linien"`
+	Typ    string `json:"typ"`
+	Value  string `json:"value"`
 }
 
 // VvrCity holds the VVR data and some meta data about it
@@ -40,6 +43,7 @@ type OsmElement struct {
 		NetworkShort     string `json:"network:short"`
 		Operator         string `json:"operator"`
 		PublicTransport  string `json:"public_transport"`
+		RouteRef         string `json:"route_ref"`
 		Shelter          string `json:"shelter"`
 		TactilePaving    string `json:"tactile_paving"`
 		Wheelchair       string `json:"wheelchair"`
