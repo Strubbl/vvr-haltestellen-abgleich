@@ -302,9 +302,11 @@ func main() {
 			}
 			if object.Tags.RouteRef == "" && targetRouteRef != "" {
 				result[i].OsmReference = result[i].OsmReference + "<br />- route_ref is completely missing:<br><code>route_ref=" + targetRouteRef + "</code>"
+				warningsSum++
 			}
 			if object.Tags.RouteRef != "" && object.Tags.RouteRef != targetRouteRef {
 				result[i].OsmReference = result[i].OsmReference + "<br />- existing <code>route_ref=" + object.Tags.RouteRef + "</code> does not match calculated <code>route_ref=" + targetRouteRef + "</code>"
+				warningsSum++
 			}
 			// check operator
 			if object.Tags.Operator == "" {
