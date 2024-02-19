@@ -5,7 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -213,10 +212,10 @@ func readCurrentJSON(i interface{}) error {
 		}
 		return nil
 	}
-	b, err := ioutil.ReadFile(jsonFilePath)
+	b, err := os.ReadFile(jsonFilePath)
 	if err != nil {
 		if *debug {
-			log.Println("readCurrentJSON: error while ioutil.ReadFile", err)
+			log.Println("readCurrentJSON: error while os.ReadFile", err)
 		}
 		fmt.Println(err)
 		return err
@@ -264,7 +263,7 @@ func writeNewJSON(i interface{}) error {
 		}
 		return err
 	}
-	err = ioutil.WriteFile(jsonFilePath, b, 0644)
+	err = os.WriteFile(jsonFilePath, b, 0644)
 	if err != nil {
 		if *debug {
 			log.Println("writeNewJSON: error while writing data json", err)
@@ -388,7 +387,7 @@ func main() {
 	}
 
 	// create lock file and delete it on exit of main
-	err := ioutil.WriteFile(lockFile, nil, 0644)
+	err := os.WriteFile(lockFile, nil, 0644)
 	if err != nil {
 		if *debug {
 			log.Println("main: error while writing lock file")
