@@ -174,6 +174,7 @@ func main() {
 			oneBusStop := newVvr.CityResults[i].Result[k]
 			var oneMatch MatchedBusStop
 			oneMatch.Name = oneBusStop.Value
+			oneMatch.Linien = oneBusStop.Linien
 			oneMatch.VvrID = oneBusStop.ID
 			// use VVR ID to remove duplicate VVR entities
 			vvrIsDuplicate := false
@@ -294,6 +295,18 @@ func main() {
 					warningsSum++
 				}
 			}
+			// check route_ref
+			targetRouteRef, err := convertLinienToRouteRef(mbs[i].Linien)
+			if err != nil {
+				log.Println("convertLinienToRouteRef failed with error:", err)
+			}
+			if object.Tags.RouteRef == "" && targetRouteRef != "" {
+				result[i].OsmReference = result[i].OsmReference + "<br />- route_ref is completely missing:<br><code>route_ref=" + targetRouteRef + "</code>"
+			}
+			if object.Tags.RouteRef != "" && object.Tags.RouteRef != targetRouteRef {
+				result[i].OsmReference = result[i].OsmReference + "<br />- existing <code>route_ref=" + object.Tags.RouteRef + "</code> does not match calculated <code>route_ref=" + targetRouteRef + "</code>"
+			}
+			// check operator
 			if object.Tags.Operator == "" {
 				operatorMightBeVVR := ""
 				if result[i].IsInVVR {

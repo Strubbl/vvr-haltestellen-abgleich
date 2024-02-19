@@ -2,6 +2,9 @@ package main
 
 import (
 	"log"
+	"regexp"
+	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -44,4 +47,32 @@ func doesNameExistAlreadyInArray(mbs []MatchedBusStop, name string) int {
 		}
 	}
 	return -1
+}
+
+func convertLinienToRouteRef(linien string) (string, error) {
+	routeRef := ""
+	if linien == "" {
+		return routeRef, nil
+	}
+	var linesArr []int
+	var err error
+	var re = regexp.MustCompile(`<span.*?>([0-9]+)</span.*?>`)
+	res := re.FindAllStringSubmatch(linien, -1)
+	log.Println("linien:", linien)
+	for i := range res {
+		log.Println("res[i]:", res[i])
+		line, err := strconv.Atoi(res[i][1])
+		if err != nil {
+			return "", err
+		}
+		linesArr = append(linesArr, line)
+	}
+	sort.Ints(linesArr)
+	for i := 0; i < len(linesArr); i++ {
+		routeRef += strconv.Itoa(linesArr[i])
+		if i < len(linesArr)-1 {
+			routeRef += ";"
+		}
+	}
+	return routeRef, err
 }

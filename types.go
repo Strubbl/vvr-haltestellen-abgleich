@@ -66,6 +66,7 @@ type OverpassData struct {
 type MatchedBusStop struct {
 	Name     string
 	VvrID    string
+	Linien   string
 	City     string
 	Elements []OsmElement
 }
