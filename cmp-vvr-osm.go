@@ -300,8 +300,8 @@ func getCityResultFromData(cityName string, vvr VvrData) *VvrCity {
 
 func doesOsmElementMatchVvrElement(osm OsmElement, vvrName string, cities []string) bool {
 	// add search and replace elements only in lower case
-	search := [...]string{"-", "/", ",", "ä", "ö", "ü", "ß", "(", ")", ".", "strasse", "haupthst", "wpl"}
-	replace := [...]string{" ", " ", "", "ae", "oe", "ue", "ss", "", "", "", "str", "haupthaltestelle", "wendeplatz"}
+	search := [...]string{"-", "/", ",", "ä", "ö", "ü", "ß", "(", ")", ".", "strasse", "haupthst", "wpl", "krhs"}
+	replace := [...]string{" ", " ", "", "ae", "oe", "ue", "ss", "", "", "", "str", "haupthaltestelle", "wendeplatz", "krankenhaus"}
 	if len(search) != len(replace) {
 		log.Panicln("search and replace arrays do not have the same length")
 	}
