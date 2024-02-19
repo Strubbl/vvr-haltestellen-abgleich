@@ -56,7 +56,7 @@ Ignorierte OSM Objekte wegen anderem Betreiber: {{ .IgnoredBusStops }}</p>
       <td>{{ .NrBusStops }}</td>
       <td>{{ .NrPlatforms }}</td>
       <td>{{ .NrStopPositions }}</td>
-      <td>{{ .OsmReference }}</td>
+      <td>{{ .OsmReference | unescapeHTML }}</td>
     </tr>
     {{else}}<tr><td colspan="9"><strong>no data</strong></td></tr>{{end}}
     </tbody>
