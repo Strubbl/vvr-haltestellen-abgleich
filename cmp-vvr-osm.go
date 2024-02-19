@@ -30,7 +30,7 @@ const vvrSearchURL = "https://vvr.verbindungssuche.de/fpl/suhast.php?&query="
 const overpassSearchArea = "Vorpommern-Rügen"
 const overpassURL = "http://overpass-api.de/api/interpreter?data="
 const overpassQueryPrefix = "[out:json][timeout:600];area[boundary=administrative][admin_level=6][name~'("
-const overpassQuerySuffix = ")']->.searchArea;(nw[\"public_transport\"=\"platform\"][\"bus\"](area.searchArea);node[\"public_transport\"=\"stop_position\"][\"bus\"](area.searchArea);node[\"highway\"=\"bus_stop\"](area.searchArea);rel[\"type\"=\"public_transport\"](area.searchArea););out;"
+const overpassQuerySuffix = ")']->.searchArea;(nw[\"public_transport\"=\"platform\"][\"bus\"](area.searchArea);node[\"public_transport\"=\"stop_position\"][\"bus\"](area.searchArea);node[\"highway\"=\"bus_stop\"](area.searchArea);rel[\"type\"=\"public_transport\"][\"bus\"](area.searchArea););out;"
 
 // tags
 const tag_network = "Verkehrsgesellschaft Vorpommern-Rügen"
