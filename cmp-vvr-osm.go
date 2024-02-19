@@ -66,6 +66,7 @@ var ignoreBusStopsWithOperators = map[string]int{
 	"Deutsche Bahn":            0,
 	"Flixbus":                  0,
 	"Gemeinde Binz":            0,
+	"Regenbogencamp Nonnevitz": 0,
 }
 var httpClient = &http.Client{Timeout: 1000 * time.Second}
 
