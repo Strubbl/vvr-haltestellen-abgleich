@@ -69,6 +69,7 @@ var ignoreBusStopsWithOperators = map[string]int{
 	"Regenbogencamp Nonnevitz": 0,
 }
 var httpClient = &http.Client{Timeout: 1000 * time.Second}
+var ignoreVvrStops = []string{"SEV", "(Workshop)", "Schulbus", "Wagen defekt", "Stralsund, Velgast", "Stralsund, Tribseer Wiesen", "Sonderfahrt", "Probefahrt", "Stralsund, O.-Palme-Platz Wende", "Stralsund, Miltzow", "Stralsund, Klausdorf", "Stralsund, Jaromastraße", "Stralsund, Hexenplatz P+R", "Stralsund, Herzfeld"}
 
 // type definitions
 // VvrBusStop represents all info from VVR belonging to one bus stop
@@ -301,8 +302,8 @@ func getCityResultFromData(cityName string, vvr VvrData) *VvrCity {
 
 func doesOsmElementMatchVvrElement(osm OsmElement, vvrName string, cities []string) bool {
 	// add search and replace elements only in lower case
-	search := [...]string{"-", "/", ",", "ä", "ö", "ü", "ß", "(", ")", ".", "strasse", "haupthst", "wpl", "krhs"}
-	replace := [...]string{" ", " ", "", "ae", "oe", "ue", "ss", "", "", "", "str", "haupthaltestelle", "wendeplatz", "krankenhaus"}
+	search := [...]string{"l.-feuchtwanger", "-", "/", ",", "ä", "ö", "ü", "ß", "(", ")", ".", "strasse", "haupthst", "wpl", "krhs"}
+	replace := [...]string{"lion-feuchtwanger", " ", " ", "", "ae", "oe", "ue", "ss", "", "", "", "str", "haupthaltestelle", "wendeplatz", "krankenhaus"}
 	if len(search) != len(replace) {
 		log.Panicln("search and replace arrays do not have the same length")
 	}
@@ -480,7 +481,7 @@ func main() {
 			}
 		}
 	}
-	if *debug {
+	if *verbose {
 		log.Println("extractedCities:", extractedCities, len(extractedCities))
 	}
 	// get OSM data
@@ -542,7 +543,13 @@ func main() {
 					vvrIsDuplicate = true
 				}
 			}
-			if !vvrIsDuplicate {
+			vvrIsSpecialDestination := false
+			for specDest := 0; specDest < len(ignoreVvrStops); specDest++ {
+				if strings.Contains(oneMatch.Name, ignoreVvrStops[specDest]) {
+					vvrIsSpecialDestination = true
+				}
+			}
+			if !vvrIsDuplicate && !vvrIsSpecialDestination {
 				oneMatch.City = newVvr.CityResults[i].SearchWord
 				var removeOsmElementsByID []int64
 				for m := 0; m < len(newOverpassData.Elements); m++ {
