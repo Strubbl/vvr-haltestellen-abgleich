@@ -58,9 +58,7 @@ func convertLinienToRouteRef(linien string) (string, error) {
 	var err error
 	var re = regexp.MustCompile(`<span.*?>([0-9]+)</span.*?>`)
 	res := re.FindAllStringSubmatch(linien, -1)
-	log.Println("linien:", linien)
 	for i := range res {
-		log.Println("res[i]:", res[i])
 		line, err := strconv.Atoi(res[i][1])
 		if err != nil {
 			return "", err
