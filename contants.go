@@ -12,6 +12,7 @@ const cacheTimeVvrInHours = 167
 const lockFile = ".lock"
 const outputDir = "output"
 const overpassDataFile = "overpass.json"
+const templateFileEnding = ".go.tmpl"
 const templateName = "haltestellenabgleich"
 const tmplDirectory = "tmpl"
 const vvrDataFile = "vvr.json"

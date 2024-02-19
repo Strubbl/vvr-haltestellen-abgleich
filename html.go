@@ -20,11 +20,11 @@ func writeTemplateToHTML(templateData TemplateData) {
 		}
 	}()
 
-	htmlSource, err := template.New(templateName + ".tmpl").Funcs(template.FuncMap{
+	htmlSource, err := template.New(templateName + templateFileEnding).Funcs(template.FuncMap{
 		"unescapeHTML": func(input string) template.HTML {
 			return template.HTML(input)
 		},
-	}).ParseFiles(tmplDirectory + "/" + templateName + ".tmpl")
+	}).ParseFiles(tmplDirectory + "/" + templateName + templateFileEnding)
 	if err != nil {
 		log.Println("writeTemplateToHTML", err)
 	}
