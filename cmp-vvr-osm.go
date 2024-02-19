@@ -608,6 +608,9 @@ func main() {
 			object := mbs[i].Elements[k]
 			object_id := strconv.FormatInt(object.ID, 10)
 			objectURL := "http://osm.org/" + object.Type + "/" + object_id
+			// OSM Reference column filling Start
+			josm_link := "<a href=\"http://127.0.0.1:8111/load_object?new_layer=false&objects=" + string(object.Type[0]) + object_id + "\" target=\"hiddenIframe\" title=\"edit in JOSM\">(j)</a>"
+			result[i].OsmReference = result[i].OsmReference + "<p><a href=\"" + objectURL + "\">" + object.Type + " " + object_id + "</a> " + josm_link
 			// ignore certain bus stops having a known operator
 			value, exists := ignoreBusStopsWithOperators[object.Tags.Operator]
 			if exists {
@@ -616,12 +619,10 @@ func main() {
 				if *debug {
 					log.Println("operator", object.Tags.Operator, "shall be ignored for object", objectURL)
 				}
-				// skip further processing for this bus stop
+				result[i].OsmReference = result[i].OsmReference + " (Operator is " + object.Tags.Operator + ")</p>"
+				// skip further processing for this bus stop because it is not VVR but a different operator
 				continue
 			}
-			// OSM Reference column filling Start
-			josm_link := "<a href=\"http://127.0.0.1:8111/load_object?new_layer=false&objects=" + string(object.Type[0]) + object_id + "\" target=\"hiddenIframe\" title=\"edit in JOSM\">(j)</a>"
-			result[i].OsmReference = result[i].OsmReference + "<p><a href=\"" + objectURL + "\">" + object.Type + " " + object_id + "</a> " + josm_link
 			if object.Type != "relation" && (object.Tags.PublicTransport != "stop_position" || object.Tags.Highway == "bus_stop") {
 				if object.Tags.Network == "" {
 					result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_network_tag_missing
