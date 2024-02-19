@@ -17,7 +17,7 @@ import (
 )
 
 const cacheDir = "cache"
-const cacheTimeOverpassInHours = 23
+const cacheTimeOverpassInHours = 8
 const cacheTimeVvrInHours = 167
 const lockFile = ".lock"
 const outputDir = "output"
@@ -522,6 +522,9 @@ func main() {
 		log.Println("newOverpassData.Elements before matching:", len(newOverpassData.Elements))
 	}
 	// match VVR data with OSM Elements
+	if *verbose {
+		log.Println("matching VVR data with OSM Elements")
+	}
 	var mbs []MatchedBusStop
 	insaneLoops := 0
 	for i := 0; i < len(newVvr.CityResults); i++ {
@@ -562,7 +565,7 @@ func main() {
 		}
 	}
 	remainingOsmElements := len(newOverpassData.Elements)
-	if *debug {
+	if *verbose {
 		log.Println("insane looping finished:", insaneLoops)
 		log.Println("newOverpassData.Elements left after matching:", len(newOverpassData.Elements))
 	}
