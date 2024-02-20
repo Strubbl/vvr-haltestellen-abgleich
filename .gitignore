@@ -1,4 +1,5 @@
 cache/
+.lock
 output/
 run.sh
 todo.txt
