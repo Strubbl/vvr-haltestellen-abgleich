@@ -295,16 +295,16 @@ func main() {
 					warningsSum++
 				}
 			}
-			// check route_ref
+			// check route_ref for platforms only
 			targetRouteRef, err := convertLinienToRouteRef(mbs[i].Linien)
 			if err != nil {
 				log.Println("convertLinienToRouteRef failed with error:", err)
 			}
-			if object.Tags.RouteRef == "" && targetRouteRef != "" {
-				result[i].OsmReference = result[i].OsmReference + "<br />- route_ref is completely missing:<br><code>route_ref=" + targetRouteRef + "</code>"
+			if object.Tags.PublicTransport == "platform" && object.Tags.RouteRef == "" && targetRouteRef != "" {
+				result[i].OsmReference = result[i].OsmReference + "<br />- route_ref missing:<br><code>route_ref=" + targetRouteRef + "</code>"
 				warningsSum++
 			}
-			if object.Tags.RouteRef != "" && object.Tags.RouteRef != targetRouteRef {
+			if object.Tags.PublicTransport == "platform" && object.Tags.RouteRef != "" && targetRouteRef != "" && object.Tags.RouteRef != targetRouteRef {
 				result[i].OsmReference = result[i].OsmReference + "<br />- existing <code>route_ref=" + object.Tags.RouteRef + "</code> does not match calculated <code>route_ref=" + targetRouteRef + "</code>"
 				warningsSum++
 			}
