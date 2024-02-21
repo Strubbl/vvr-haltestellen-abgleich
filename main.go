@@ -310,11 +310,7 @@ func main() {
 			}
 			// check operator
 			if object.Tags.Operator == "" {
-				operatorMightBeVVR := ""
-				if result[i].IsInVVR {
-					operatorMightBeVVR = warning_operator_might_be_vvr
-				}
-				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_operator_tag_missing + " " + operatorMightBeVVR
+				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_operator_tag_missing + warning_operator_might_be_vvr
 				warningsSum++
 			} else if object.Tags.Operator != tag_operator {
 				result[i].OsmReference = result[i].OsmReference + "<br />- " + warning_operator_tag_not_correct + ". " + object.Tags.Operator + " instead of operator=" + tag_operator
