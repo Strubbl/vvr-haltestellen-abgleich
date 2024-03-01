@@ -30,7 +30,8 @@ const vvrSearchURL = "https://vvr.verbindungssuche.de/fpl/suhast.php?&query="
 // Vorpommern-Rügen = 3601739379
 // Graal-Müritz = 3600393349
 // Greifswald = 3600062363
-const overpassSearchArea = "area(3601739379);area(3600393349);area(3600062363);"
+// Landhagen =  3601432580 // rund um Greifswald
+const overpassSearchArea = "area(3601739379);area(3600393349);area(3600062363);area(3601432580);"
 const overpassURL = "http://overpass-api.de/api/interpreter?data="
 const overpassQueryPrefix = "[out:json][timeout:600];("
 const overpassQuerySuffix = ")->.searchArea;(nw[\"public_transport\"=\"platform\"][\"bus\"](area.searchArea);node[\"public_transport\"=\"stop_position\"][\"bus\"](area.searchArea);node[\"highway\"=\"bus_stop\"](area.searchArea);rel[\"type\"=\"public_transport\"][\"bus\"](area.searchArea););out;"
@@ -62,18 +63,21 @@ var verbose = flag.Bool("verbose", false, "verbose mode")
 // non-const consts
 var alphabet = [30]string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "ä", "ö", "ü", "ß"}
 var ignoreBusStopsWithOperators = map[string]int{
-	"Darßbahn":                 0,
-	"Rügen-Bahnen":             0,
-	"Kap-Arkona-Bahn":          0,
-	"Busunternehmen M. Scholz": 0,
-	"Deutsche Bahn":            0,
-	"Flixbus":                  0,
-	"Gemeinde Binz":            0,
-	"Regenbogencamp Nonnevitz": 0,
+	"Darßbahn":                          0,
+	"Rügen-Bahnen":                      0,
+	"Kap-Arkona-Bahn":                   0,
+	"Busunternehmen M. Scholz":          0,
+	"Deutsche Bahn":                     0,
+	"Flixbus":                           0,
+	"Gemeinde Binz":                     0,
+	"Regenbogencamp Nonnevitz":          0,
+	"Stadtwerke Greifswald GmbH (SWG)":  0,
+	"Stadtwerke Greifswald GmbH":        0,
+	"Anklamer Verkehrsgesellschaft mbH": 0,
 }
 var httpClient = &http.Client{Timeout: 1000 * time.Second}
-var ignoreVvrStops = []string{"Glowe, Wendeplatz", "Gager, Hafen", "Franzburg, Garthofstraße", "Dorow, Abzweig", "Damgarten, Bahnhof Ost", "Camper, Ortseingang", "Camitz, Försterei", "Balkenkoppel, Abzweig", "Groß Lehmhagen, Dorf", "Stralsund, Krönnevitz", "Stralsund, Kummerow", "SEV", "(Workshop)", "Schulbus", "Wagen defekt", "Stralsund, Velgast", "Stralsund, Tribseer Wiesen", "Sonderfahrt", "Probefahrt", "Stralsund, O.-Palme-Platz Wende", "Stralsund, Miltzow", "Stralsund, Klausdorf", "Stralsund, Jaromastraße", "Stralsund, Hexenplatz P+R", "Stralsund, Herzfeld"}
+var ignoreVvrStops = []string{"Richtenberg, Am Sportplatz", "Poggendorf, Alte Dorfstraße", "Stralsund, Altenpleen", "Stralsund, Betriebsfahrt", "Glowe, Wendeplatz", "Gager, Hafen", "Franzburg, Garthofstraße", "Dorow, Abzweig", "Damgarten, Bahnhof Ost", "Camper, Ortseingang", "Camitz, Försterei", "Balkenkoppel, Abzweig", "Groß Lehmhagen, Dorf", "Stralsund, Krönnevitz", "Stralsund, Kummerow", "SEV", "(Workshop)", "Schulbus", "Wagen defekt", "Stralsund, Velgast", "Stralsund, Tribseer Wiesen", "Sonderfahrt", "Probefahrt", "Stralsund, O.-Palme-Platz Wende", "Stralsund, Miltzow", "Stralsund, Klausdorf", "Stralsund, Jaromastraße", "Stralsund, Hexenplatz P+R", "Stralsund, Herzfeld"}
 
 // add searchStopName and replace elements only in lower case
-var searchStopName = []string{"elmemhorst", "gr.", "lüdershg.", "bartelshg.ii", "c.-heydemann", "h.-von-stephan", "e.-m.-arndt", "h.-heine-ring", "deutsche rentenversicherung", "l.-feuchtwanger", "-", "/", ",", "ä", "ö", "ü", "ß", "(", ")", ".", "strasse", "haupthst", "wpl", "krhs"}
-var replaceStopName = []string{"elmenhorst", "groß", "lüdershagen", "bartelshagen ii", "carl-heydemann", "heinrich-von-stephan", "ernst-moritz-arndt", "heinrich-heine-ring", "drv", "lion-feuchtwanger", " ", " ", "", "ae", "oe", "ue", "ss", "", "", "", "str", "haupthaltestelle", "wendeplatz", "krankenhaus"}
+var searchStopName = []string{"straße d. jugend", "elmemhorst", "gr.", "lüdershg.", "bartelshg.ii", "c.-heydemann", "h.-von-stephan", "e.-m.-arndt", "h.-heine-ring", "deutsche rentenversicherung", "l.-feuchtwanger", "-", "/", ",", "ä", "ö", "ü", "ß", "(", ")", ".", "strasse", "haupthst", "wpl", "krhs"}
+var replaceStopName = []string{"straße der jugend", "elmenhorst", "groß", "lüdershagen", "bartelshagen ii", "carl-heydemann", "heinrich-von-stephan", "ernst-moritz-arndt", "heinrich-heine-ring", "drv", "lion-feuchtwanger", " ", " ", "", "ae", "oe", "ue", "ss", "", "", "", "str", "haupthaltestelle", "wendeplatz", "krankenhaus"}
