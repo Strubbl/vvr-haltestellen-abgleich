@@ -61,7 +61,7 @@ var ignoreBusStopsWithOperators = map[string]int{
 	"Regenbogencamp Nonnevitz": 0,
 }
 var httpClient = &http.Client{Timeout: 1000 * time.Second}
-var ignoreVvrStops = []string{"Groß Lehmhagen, Dorf", "Stralsund, Krönnevitz", "Stralsund, Kummerow", "SEV", "(Workshop)", "Schulbus", "Wagen defekt", "Stralsund, Velgast", "Stralsund, Tribseer Wiesen", "Sonderfahrt", "Probefahrt", "Stralsund, O.-Palme-Platz Wende", "Stralsund, Miltzow", "Stralsund, Klausdorf", "Stralsund, Jaromastraße", "Stralsund, Hexenplatz P+R", "Stralsund, Herzfeld"}
+var ignoreVvrStops = []string{"Glowe, Wendeplatz", "Gager, Hafen", "Franzburg, Garthofstraße", "Dorow, Abzweig", "Damgarten, Bahnhof Ost", "Camper, Ortseingang", "Camitz, Försterei", "Balkenkoppel, Abzweig", "Groß Lehmhagen, Dorf", "Stralsund, Krönnevitz", "Stralsund, Kummerow", "SEV", "(Workshop)", "Schulbus", "Wagen defekt", "Stralsund, Velgast", "Stralsund, Tribseer Wiesen", "Sonderfahrt", "Probefahrt", "Stralsund, O.-Palme-Platz Wende", "Stralsund, Miltzow", "Stralsund, Klausdorf", "Stralsund, Jaromastraße", "Stralsund, Hexenplatz P+R", "Stralsund, Herzfeld"}
 
 // add searchStopName and replace elements only in lower case
 var searchStopName = []string{"elmemhorst", "gr.", "lüdershg.", "bartelshg.ii", "c.-heydemann", "h.-von-stephan", "e.-m.-arndt", "h.-heine-ring", "deutsche rentenversicherung", "l.-feuchtwanger", "-", "/", ",", "ä", "ö", "ü", "ß", "(", ")", ".", "strasse", "haupthst", "wpl", "krhs"}
