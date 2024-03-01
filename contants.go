@@ -18,11 +18,22 @@ const tmplDirectory = "tmpl"
 const vvrDataFile = "vvr.json"
 const vvrSearchURL = "https://vvr.verbindungssuche.de/fpl/suhast.php?&query="
 
-// search area can be extended by append more areas with a pipe
-const overpassSearchArea = "Vorpommern-Rügen"
+// a bbox would be (53.948,12.2189,54.6937,13.7892)
+// normal Overpass-Turbo query:
+//
+//	[out:json][timeout:600];({{geocodeArea:"Vorpommern-Rügen"}};{{geocodeArea:"Graal-Müritz"}};{{geocodeArea:"Greifswald"}};)->.searchArea;(nw["public_transport"="platform"]["bus"](area.searchArea);node["public_transport"="stop_position"]["bus"](area.searchArea);node["highway"="bus_stop"](area.searchArea);rel["type"="public_transport"]["bus"](area.searchArea););out;
+//
+// needs to be converted to Overpass-API query (compact variant):
+//
+//	[out:json][timeout:600];(area(3601739379);area(3600393349);area(3600062363);)->.searchArea;(nwr["public_transport"="platform"]["bus"](area.searchArea);node["public_transport"="stop_position"]["bus"](area.searchArea);node["highway"="bus_stop"](area.searchArea);relation["type"="public_transport"]["bus"](area.searchArea););out;
+//
+// Vorpommern-Rügen = 3601739379
+// Graal-Müritz = 3600393349
+// Greifswald = 3600062363
+const overpassSearchArea = "area(3601739379);area(3600393349);area(3600062363);"
 const overpassURL = "http://overpass-api.de/api/interpreter?data="
-const overpassQueryPrefix = "[out:json][timeout:600];area[boundary=administrative][admin_level=6][name~'("
-const overpassQuerySuffix = ")']->.searchArea;(nw[\"public_transport\"=\"platform\"][\"bus\"](area.searchArea);node[\"public_transport\"=\"stop_position\"][\"bus\"](area.searchArea);node[\"highway\"=\"bus_stop\"](area.searchArea);rel[\"type\"=\"public_transport\"][\"bus\"](area.searchArea););out;"
+const overpassQueryPrefix = "[out:json][timeout:600];("
+const overpassQuerySuffix = ")->.searchArea;(nw[\"public_transport\"=\"platform\"][\"bus\"](area.searchArea);node[\"public_transport\"=\"stop_position\"][\"bus\"](area.searchArea);node[\"highway\"=\"bus_stop\"](area.searchArea);rel[\"type\"=\"public_transport\"][\"bus\"](area.searchArea););out;"
 
 // tags
 const tag_network = "Verkehrsgesellschaft Vorpommern-Rügen"
