@@ -75,8 +75,9 @@ type MatchResult struct {
 	ID              int
 	VvrID           string
 	Name            string
-	IsInVVR         bool
+	IsIgnored       bool
 	IsInOSM         bool
+	IsInVVR         bool
 	NrBusStops      int
 	NrPlatforms     int
 	NrStopPositions int

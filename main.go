@@ -252,6 +252,7 @@ func main() {
 		result[i].NrPlatforms = 0
 		result[i].NrStopPositions = 0
 		result[i].Name = mbs[i].Name
+		result[i].IsIgnored = false
 		result[i].OsmReference = ""
 		for k := 0; k < len(mbs[i].Elements); k++ {
 			object := mbs[i].Elements[k]
@@ -269,6 +270,7 @@ func main() {
 					log.Println("operator", object.Tags.Operator, "shall be ignored for object", objectURL)
 				}
 				result[i].OsmReference = result[i].OsmReference + " (Operator is " + object.Tags.Operator + ")</p>"
+				result[i].IsIgnored = true
 				// skip further processing for this bus stop because it is not VVR but a different operator
 				continue
 			}
