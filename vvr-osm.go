@@ -21,8 +21,10 @@ func doesOsmElementMatchVvrElement(osm OsmElement, vvrName string, cities []stri
 	if len(searchStopName) != len(replaceStopName) {
 		log.Panicln("search and replace arrays do not have the same length")
 	}
-	osmNameCleaned := strings.ToLower(osm.Tags.Name)
-	vvrNameCleaned := strings.ToLower(vvrName)
+	osmNameTrimmed := strings.TrimSpace(osm.Tags.Name)
+	vvrNameTrimmed := strings.TrimSpace(vvrName)
+	osmNameCleaned := strings.ToLower(osmNameTrimmed)
+	vvrNameCleaned := strings.ToLower(vvrNameTrimmed)
 	for i := 0; i < len(searchStopName); i++ {
 		osmNameCleaned = strings.ReplaceAll(osmNameCleaned, searchStopName[i], replaceStopName[i])
 		vvrNameCleaned = strings.ReplaceAll(vvrNameCleaned, searchStopName[i], replaceStopName[i])
