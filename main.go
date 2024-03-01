@@ -181,12 +181,14 @@ func main() {
 			for p := 0; p < len(mbs); p++ {
 				if mbs[p].VvrID == oneMatch.VvrID {
 					vvrIsDuplicate = true
+					break
 				}
 			}
 			vvrIsSpecialDestination := false
 			for specDest := 0; specDest < len(ignoreVvrStops); specDest++ {
 				if strings.Contains(oneMatch.Name, ignoreVvrStops[specDest]) {
 					vvrIsSpecialDestination = true
+					break
 				}
 			}
 			if !vvrIsDuplicate && !vvrIsSpecialDestination {
@@ -198,6 +200,7 @@ func main() {
 						removeOsmElementsByID = append(removeOsmElementsByID, newOverpassData.Elements[m].ID)
 					}
 					insaneLoops++
+					// do not break here because one VVR element can match multiple OSM objects
 				}
 				// remove the elements we already matched
 				for n := 0; n < len(removeOsmElementsByID); n++ {
@@ -254,6 +257,21 @@ func main() {
 		result[i].Name = mbs[i].Name
 		result[i].IsIgnored = false
 		result[i].OsmReference = ""
+		// we have a match from VVR which is not in OSM, so let's check the bus lines
+		if result[i].IsInVVR && !result[i].IsInOSM {
+			busLines, err := convertLinienToRouteRef(mbs[i].Linien)
+			if err != nil {
+				log.Println("error while getting bus lines for", result[i].Name, err)
+			}
+			if *debug {
+				log.Println(result[i].Name, "is in VVR, but in OSM, so these are the bus lines:", busLines)
+			}
+			if busLines == "" {
+				result[i].OsmReference = result[i].OsmReference + "- no buslines are attached to this bus stop, currently not used by VVR"
+			} else {
+				result[i].OsmReference = result[i].OsmReference + "- bus stop is used for bus lines " + busLines
+			}
+		}
 		for k := 0; k < len(mbs[i].Elements); k++ {
 			object := mbs[i].Elements[k]
 			object_id := strconv.FormatInt(object.ID, 10)
