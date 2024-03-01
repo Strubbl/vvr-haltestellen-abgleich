@@ -186,7 +186,7 @@ func main() {
 			}
 			vvrIsSpecialDestination := false
 			for specDest := 0; specDest < len(ignoreVvrStops); specDest++ {
-				if strings.Contains(oneMatch.Name, ignoreVvrStops[specDest]) {
+				if oneMatch.Name == ignoreVvrStops[specDest] {
 					vvrIsSpecialDestination = true
 					break
 				}
