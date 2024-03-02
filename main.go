@@ -268,8 +268,10 @@ func main() {
 			}
 			if busLines == "" {
 				result[i].OsmReference = result[i].OsmReference + "- no buslines are attached to this bus stop, currently not used by VVR"
+				warningsSum++
 			} else {
 				result[i].OsmReference = result[i].OsmReference + "- bus stop is used for bus lines " + busLines
+				warningsSum++
 			}
 		}
 		for k := 0; k < len(mbs[i].Elements); k++ {
