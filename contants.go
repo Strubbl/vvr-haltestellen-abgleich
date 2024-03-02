@@ -63,17 +63,18 @@ var verbose = flag.Bool("verbose", false, "verbose mode")
 // non-const consts
 var alphabet = [30]string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "ä", "ö", "ü", "ß"}
 var ignoreBusStopsWithOperators = map[string]int{
-	"Darßbahn":                          0,
-	"Rügen-Bahnen":                      0,
-	"Kap-Arkona-Bahn":                   0,
-	"Busunternehmen M. Scholz":          0,
-	"Deutsche Bahn":                     0,
-	"Flixbus":                           0,
-	"Gemeinde Binz":                     0,
-	"Regenbogencamp Nonnevitz":          0,
-	"Stadtwerke Greifswald GmbH (SWG)":  0,
-	"Stadtwerke Greifswald GmbH":        0,
-	"Anklamer Verkehrsgesellschaft mbH": 0,
+	"Darßbahn":                                   0,
+	"Rügen-Bahnen":                               0,
+	"Kap-Arkona-Bahn":                            0,
+	"Busunternehmen M. Scholz":                   0,
+	"Deutsche Bahn":                              0,
+	"Flixbus":                                    0,
+	"Gemeinde Binz":                              0,
+	"Regenbogencamp Nonnevitz":                   0,
+	"Stadtwerke Greifswald GmbH (SWG)":           0,
+	"Stadtwerke Greifswald GmbH":                 0,
+	"Anklamer Verkehrsgesellschaft mbH":          0,
+	"Verkehrsgesellschaft Vorpommern-Greifswald": 0,
 }
 var httpClient = &http.Client{Timeout: 1000 * time.Second}
 var ignoreVvrStops = []string{"Werkstatt, Stralsund (Workshop)", "Stralsund, Wagen defekt", "Stralsund, Sonderfahrt", "Stralsund, SEV", "Werkstatt, Ribnitz (Workshop)", "Stralsund, Probefahrt", "BH_G_S, (Workshop)", "BH_G_HG, (Workshop)", "Werkstatt, Bergen (Workshop)", "Stralsund, Am Hohen Graben", "Richtenberg, Mühlenbergstraße", "Kölzow", "Kloster, Kirchweg", "Neu Lüdershagen, II", "Vitte, Hafen", "Klevenow, Gemeinde", "Stralsund, Franzburg", "Schulenberg, Feuerwehr", "Papenhagen, Ersatzhaltestelle", "Hoikenhagen, Ersatzhaltestelle", "Stralsund, Bremer Str.", "Bergen, Industriestraße", "Barth, Vineta Sportarena", "Baabe, Haus des Gastes", "Baabe, Göhrener Chaussee", "Lassentin, Ausbau Ort", "Kölzow, Ausbau", "Richtenberg, Am Sportplatz", "Poggendorf, Alte Dorfstraße", "Stralsund, Altenpleen", "Stralsund, Betriebsfahrt", "Glowe, Wendeplatz", "Gager, Hafen", "Franzburg, Garthofstraße", "Dorow, Abzweig", "Damgarten, Bahnhof Ost", "Camper, Ortseingang", "Camitz, Försterei", "Balkenkoppel, Abzweig", "Groß Lehmhagen, Dorf", "Stralsund, Krönnevitz", "Stralsund, Kummerow", "Schulbus", "Stralsund, Velgast", "Stralsund, Tribseer Wiesen", "Stralsund, O.-Palme-Platz Wende", "Stralsund, Miltzow", "Stralsund, Klausdorf", "Stralsund, Jaromastraße", "Stralsund, Hexenplatz P+R", "Stralsund, Herzfeld"}
