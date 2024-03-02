@@ -272,6 +272,7 @@ func main() {
 			} else {
 				result[i].OsmReference = result[i].OsmReference + "- bus stop is used for bus lines " + busLines
 				warningsSum++
+				// fmt.Printf("|-\n| " + result[i].Name + " || " + busLines + " || \n")
 			}
 		}
 		for k := 0; k < len(mbs[i].Elements); k++ {
